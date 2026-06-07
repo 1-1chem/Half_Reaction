@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>半反応式完成ゲーム（専用キーボード完全版）</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100vh;
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+body {
+  /* 画面全体の基準サイズを少し小さくする設定 */
+  transform: scale(0.9); /* 💡 90%の大きさに縮小（85%なら 0.85） */
+  transform-origin: top center; /* 💡 画面の上中央を基準に縮小 */
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+    /* 1. 問題文枠 */
+    #questionArea {
+      height: 15vh;
+      background-color: #ffffff;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    #questionTitle {
+      font-size: 16px;
+      color: #64748b;
+      margin: 0 0 5px 0;
+    }
+    #questionText {
+      font-size: 22px;
+      font-weight: bold;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    /* 2. 解答欄（外枠） */
+    #answerArea {
+      min-height: 20vh; 
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center; 
+      align-items: center;     
+      border-bottom: 2px solid #e2e8f0;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+
+    .formula-inner {
+      display: flex;
+      flex-wrap: wrap;             
+      justify-content: flex-start;  
+      font-size: 24px;
+      font-weight: bold;
+      color: #334155;
+      width: fit-content;          
+      max-width: 100%;
+    }
+    
+    #displayLeft, #displayRight {
+      white-space: nowrap; 
+      font-size: 24px;       /* もし文字サイズがこれくらいなら */
+  line-height: 1.5;
+    }
+    
+    /* カーソルとしての赤丸ブリンク */
+    .cursor {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      margin: 0 5px;
+      vertical-align: middle;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+
+    /* 3. ナビ表示・次へボタン連動欄 */
+    #naviArea {
+      height: 9vh;
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      font-weight: 500;
+      color: #2563eb;
+      border-bottom: 2px solid #e2e8f0;
+      box-sizing: border-box;
+      position: relative;
+    }
+    #nextBtnArea {
+      display: none; 
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #f1f5f9;
+      justify-content: center;
+      align-items: center;
+    }
+    .btn-next {
+      background-color: #10b981;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 10px 40px;
+      border-radius: 30px;
+      box-shadow: 0 4px 0 #059669;
+    }
+
+    /* 4. 専用キーボードエリア */
+    #keyboardArea {
+      flex-grow: 1;
+      background-color: #cbd5e1;
+      padding: 8px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* キーボード全体を6列に変更 */
+    #customKeyboard {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr); 
+      gap: 6px;
+      width: 100%;
+    }
+
+    /* 候補ボタンが並ぶエリアの見た目 */
+    #candidateArea {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 54px; 
+      margin-bottom: 8px;
+      padding: 8px;
+      background-color: #f1f5f9;
+      border: 2px dashed #94a3b8;
+      border-radius: 8px;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    /* 現れた候補ボタンの見た目 */
+    .cand-btn {
+      padding: 6px 16px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #1d4ed8;
+    }
+    .cand-btn:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    button {
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      background-color: #ffffff;
+      color: #334155;
+      box-shadow: 0 3px 0 #94a3b8, 0 4px 6px rgba(0,0,0,0.05);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.05s ease;
+      -webkit-tap-highlight-color: transparent;
+      height: 48px;
+    }
+    button:active {
+      transform: translateY(3px);
+      box-shadow: none;
+    }
+
+    /* 各種ボタンの装飾 */
+    .category-btn { background-color: #ffffff; color: #1e293b; }
+
+    /* 元の「上付（オレンジ）」「下付（緑）」のスタイルをマクロボタン等に適用 */
+    .macro-btn[data-macro="H+^"] { background-color: #06b6d4; color: white; box-shadow: 0 3px 0 #0891b2; font-size: 20px; }
+    .macro-btn[data-macro="e-^"] { background-color: #06b6d4; color: white; box-shadow: 0 3px 0 #0891b2; font-size: 20px; }
+    .macro-btn[data-macro="H2_O"] { background-color: #06b6d4; color: white; box-shadow: 0 3px 0 #0891b2; font-size: 20px; }
+
+    /* 左辺・右辺ボタンは元の「青（btn-side）」の色にする */
+    #btnLeft, #btnRight { background-color: #3b82f6; color: white; box-shadow: 0 3px 0 #1d4ed8; }
+
+    /* Undoボタンは元の「グレー（btn-undo）」の色にする */
+    #btnUndo { background-color: #64748b; color: white; box-shadow: 0 3px 0 #475569; }
+
+    /* 提出ボタン */
+    #btnSubmit { background-color: #ef4444; color: white; box-shadow: 0 3px 0 #b91c1c; font-size: 22px; }
+
+    #questionArea sup, #answerArea sup { font-size: 70% !important; vertical-align: super !important; line-height: 0 !important; }
+    #questionArea sub, #answerArea sub { font-size: 70% !important; vertical-align: sub !important; line-height: 0 !important; }
+
+    /* 飛んでいく文字 */
+    .fly-char {
+      position: fixed;
+      z-index: 9999;
+      font-size: 30px;
+      font-weight: bold;
+      color: #2563eb;
+      pointer-events: none;
+      animation: flyToAnswer 0.6s ease-out forwards;
+    }
+    .reaction-arrow {
+      display: inline-block;
+      transform: scaleX(2);
+      margin: 0 16px;
+      font-weight: bold;
+    }
+
+    @keyframes flyToAnswer {
+      0% { transform: translate(0,0) scale(1); opacity: 1; }
+      70% { transform: translate(var(--moveX), calc(var(--moveY) - 40px)) scale(1.3); opacity: 1; }
+      100% { transform: translate(var(--moveX), var(--moveY)) scale(0.6); opacity: 0; }
+    }
+ 
+ /* ボタンや入力欄、回答エリアに適用 */
+.cand-btn, .macro-btn, #answerArea {
+  font-family: 'BIZ UDPGothic', sans-serif;
+}
+
+/* --- 💎 オープニング画面用スタイル --- */
+.neon-title {
+  color: #fff;
+  text-shadow: 
+    0 0 7px #fff,
+    0 0 10px #fff,
+    0 0 21px #3b82f6,
+    0 0 42px #3b82f6,
+    0 0 82px #3b82f6;
+  animation: pulse 2s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.98); text-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6; }
+  100% { transform: scale(1.02); text-shadow: 0 0 15px #38bdf8, 0 0 30px #38bdf8, 0 0 50px #3b82f6; }
+}
+
+.op-btn {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 14px 24px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  color: #fff;
+}
+
+/* 最初から始める：鮮やかなブルー */
+.start-btn {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border: 1px solid #38bdf8;
+}
+.start-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+}
+
+/* 続きを始める：サイバーなグリーン */
+.continue-btn {
+  background: linear-gradient(135deg, #059669, #047857);
+  border: 1px solid #34d399;
+}
+.continue-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.6);
+}
+/* セーブデータが無い時は半透明にしてクリック不可にする */
+.continue-btn:disabled {
+  background: #334155 !important;
+  border: 1px solid #475569 !important;
+  color: #64748b !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: 0.5;
+}
+
+/* --- 🏆 完全クリア画面用スタイル --- */
+.neon-clear-title {
+  color: #fff;
+  text-shadow: 
+    0 0 10px #fff,
+    0 0 20px #10b981,
+    0 0 40px #10b981,
+    0 0 80px #047857;
+  animation: clear-pulse 1.5s infinite alternate;
+}
+
+@keyframes clear-pulse {
+  0% { transform: scale(0.97); }
+  100% { transform: scale(1.03); }
+}
+
+.trophy-bounce {
+  display: inline-block;
+  animation: trophy-jump 0.6s infinite alternate cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes trophy-jump {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-15px) scale(1.1); }
+}
+
+/* 背景に広がるグロー（光）の演出 */
+.victory-glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(0,0,0,0) 70%);
+  top: 25%;
+  animation: rotate-glow 8s linear infinite;
+}
+
+@keyframes rotate-glow {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.3); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes star-twinkle {
+  0% { opacity: 0.6; text-shadow: 0 0 5px #f59e0b; }
+  100% { opacity: 1; text-shadow: 0 0 15px #f59e0b, 0 0 25px #f59e0b; }
+}
+
+/* タイトルに戻るボタン */
+.clear-btn {
+  width: 100%;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 14px 24px;
+  border-radius: 50px;
+  border: 1px solid #10b981;
+  background: linear-gradient(135deg, #047857, #065f46);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(4, 120, 87, 0.4);
+}
+.clear-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.7);
+}
+
+
+
+
+ </style>
+
+
+</head>
+<body>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&display=swap" rel="stylesheet">
+
+<div id="openingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e1b4b); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto;">
+  
+  <div class="title-logo-container" style="text-align: center; margin-bottom: 30px;">
+    <h1 class="neon-title" style="font-size: 50px; font-weight: 900; margin: 0; letter-spacing: 4px; line-height: 1.2;">
+      Half REACTION<br><span style="font-size: 65px; color: #38bdf8;">CHEMISTRY</span>
+    </h1>
+    <p style="color: #94a3b8; font-size: 16px; margin-top: 10px; letter-spacing: 2px;">半反応式スピードマスター</p>
+  </div>
+
+  <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 20px; max-width: 550px; width: 100%; color: #cbd5e1; margin-bottom: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+    <h3 style="color: #38bdf8; margin-top: 0; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 8px; font-size: 18px;">🧪 遊び方・ルール</h3>
+    <ul style="padding-left: 20px; margin: 10px 0; font-size: 14px; line-height: 1.6;">
+      <li>日本語の問題文を見て、正しい半反応式を完成させよう！</li>
+      <li><strong style="color: #f59e0b;">「左辺」「右辺」ボタン</strong>を切り替えて、元素記号や係数，下付き文字（ <span style="color: #f472b6;">₂</span>など）、イオンの価数（<span style="color: #f472b6;">⁺</span> など）を入力します。</li>
+      <li>レベルが上がると配点が高くなり、Give Upなしでクリアなら<span style="color: #f59e0b;">★（星）</span>を獲得！</li>
+      <li>ゲームはいつでも自動セーブされ、途中から再開可能です。</li>
+    </ul>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 320px;">
+    <button id="btnGameStart" class="op-btn start-btn">🚀 最初から始める</button>
+    <button id="btnGameContinue" class="op-btn continue-btn">💾 続きを始める</button>
+  </div>
+</div>
+
+<div id="gameClearOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #020617, #1e1b4b); z-index: 20000; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.8s ease;">
+  
+  <div class="victory-glow"></div>
+
+  <div style="text-align: center; margin-bottom: 25px; position: relative; z-index: 10;">
+    <div class="trophy-bounce" style="font-size: 70px; margin-bottom: 10px;">👑</div>
+    <h1 class="neon-clear-title" style="font-size: 42px; font-weight: 900; margin: 0; letter-spacing: 2px; line-height: 1.2;">
+      MISSION<br><span style="font-size: 55px; color: #10b981;">COMPLETED!!</span>
+    </h1>
+    <p style="color: #38bdf8; font-size: 18px; margin-top: 10px; font-weight: bold; letter-spacing: 4px;">半反応式 制御完了</p>
+  </div>
+
+  <div class="results-board" style="background: rgba(255, 255, 255, 0.03); border: 2px solid #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 25px; max-width: 450px; width: 100%; color: #cbd5e1; margin-bottom: 35px; text-align: center; position: relative; z-index: 10; backdrop-filter: blur(6px);">
+    <h3 style="color: #fff; margin-top: 0; font-size: 20px; letter-spacing: 1px;">MISSION REPORT</h3>
+    
+    <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+      <div>
+        <div style="font-size: 14px; color: #94a3b8;">FINAL SCORE</div>
+        <div style="font-size: 32px; font-weight: bold; color: #f59e0b;" id="clearFinalScore">0</div>
+      </div>
+      <div>
+        <div style="font-size: 14px; color: #94a3b8;">RANK</div>
+        <div style="font-size: 32px; font-weight: bold; color: #10b981; text-shadow: 0 0 10px rgba(16,185,129,0.5);">S CLASS</div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+      <div style="font-size: 13px; color: #94a3b8; margin-bottom: 5px;">EARNED MEDALS</div>
+      <div id="clearStarArea" style="color: #f59e0b; font-size: 26px; letter-spacing: 4px; animation: star-twinkle 1s infinite alternate;"></div>
+    </div>
+  </div>
+
+  <div style="width: 100%; max-width: 280px; position: relative; z-index: 10;">
+    <button id="btnBackToTitle" class="clear-btn">🔄 タイトルへ戻る</button>
+  </div>
+</div>
+
+
+    <div id="questionArea" style="width: 100%; box-sizing: border-box; padding: 12px; height: auto; min-height: 120px;">
+    
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+      
+      <div id="questionTitle" style="font-size: 18px; font-weight: bold; margin: 0; flex: 1; min-width: 200px; line-height: 1.4; word-break: break-all;">
+        【問題】反応式を完成させよ
+      </div>
+      
+      <div id="scoreArea" style="font-size: 18px; font-weight: bold; color: #1e40af; background: #dbeafe; padding: 4px 12px; border-radius: 6px; white-space: nowrap;">
+        SCORE: <span id="currentScore">0</span> 点
+      </div>
+      
+    </div>
+    
+    <div id="questionText" style="font-size: 16px; line-height: 1.5; word-break: break-all; height: auto; min-height: 40px; padding-top: 4px;"></div>
+  </div>
+
+  <div id="answerArea">
+    <div class="formula-inner">
+      <span id="displayLeft"></span><span id="displayRight"></span>
+    </div>
+  </div>
+
+  <div id="quizContainer">
+ 
+    <div id="naviArea">
+      <span id="naviText">「左辺」または「右辺」ボタンを押して入力を開始してください</span>
+      <div id="nextBtnArea" style="display: none;">
+        <button class="btn-next" id="btnNext">正解！次の問題へ ➔</button>
+      </div>
+    </div>
+  </div>
+  <div id="keyboardArea">
+    <div id="candidateArea"></div>
+
+    <div id="customKeyboard">
+      <button class="key-btn category-btn" data-category="A,B">A,B</button>
+      <button class="key-btn category-btn" data-category="C">C</button>
+      <button class="key-btn category-btn" data-category="F,H,I">F,H,I</button>
+      <button class="key-btn category-btn" data-category="K,L,M">K,L,M</button>
+      <button class="key-btn category-btn" data-category="N,O,P">N,O,P</button>
+      <button class="key-btn category-btn" data-category="S,Z">S,Z</button>
+      
+      <button class="macro-btn btn-macro" data-macro="H+^">H⁺</button>
+      <button class="macro-btn btn-macro" data-macro="H2_O">H₂O</button>
+      <button class="macro-btn btn-macro" data-macro="e-^">e⁻</button>
+      <button class="key-btn category-btn" data-category="価数">価数</button>
+      <button class="key-btn category-btn" data-category="原子数">原子数</button>
+      <button class="key-btn category-btn" data-category="係数">係数</button>
+      
+        <button class="key-btn category-btn" data-category="＋－" style="grid-column-start: 1; grid-row-start: 3;">－ ( )</button>
+      
+      <button class="key-btn functional-btn" id="btnLeft" style="grid-column-start: 2; grid-row-start: 3;">左辺</button>
+      <button class="key-btn functional-btn" id="btnRight" style="grid-column-start: 3; grid-row-start: 3;">右辺</button>
+        <button class="key-btn macro-btn" data-macro="+" style="grid-column-start: 4; grid-row-start: 3; background-color: #3b82f6; color: white; font-weight: bold; font-size: 18px; box-shadow: 0 3px 0 #2563eb;">＋</button>      
+      <button class="key-btn functional-btn" id="btnSubmit" style="grid-column: 5 / span 2; grid-row-start: 3;">提出</button>
+      
+      <button class="key-btn functional-btn" id="btnResetQuestion" style="grid-column-start: 1; grid-row-start: 4; background-color: #64748b; color: white; box-shadow: 0 3px 0 #475569;">やり直し</button>
+      
+      <button class="key-btn functional-btn" id="btnUndo" style="grid-column-start: 2; grid-row-start: 4;">Undo</button>
+      
+      <button class="key-btn functional-btn" id="btnGiveUp" style="background-color: #f59e0b; color: white; box-shadow: 0 3px 0 #d97706; font-size: 15px; justify-self: end; grid-column-start: 6; grid-row-start: 4;">Give up</button>    </div>
+  </div>
+<div id="levelUpModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; font-family: sans-serif;">
+  <div style="background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 80%; max-width: 400px; animation: popIn 0.3s ease-out;">
+    <h2 style="color: #eab308; font-size: 32px; margin: 0 0 10px 0; font-weight: bold; text-shadow: 1px 1px 0 #ca8a04;">🎉 LEVEL UP!</h2>
+    <p id="levelUpText" style="font-size: 18px; color: #334155; margin-bottom: 20px;">レベル 1 クリア！<br>次からは【中級編】に突入します！</p>
+    
+    <button id="btnNextLevel" style="background: #22c55e; color: white; border: none; padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 0 #16a34a; transition: transform 0.1s;">
+      次のステージに挑戦する ➔
+    </button>
+  </div>
+</div>
+
+<style>
+/* ポップアップがフワッと大きくなって出現するアニメーション */
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<div id="levelUpOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; opacity: 0; transition: opacity 0.5s ease;">
+  <div style="text-align: center; animation: popScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;">
+    <h1 style="font-size: 70px; font-weight: 900; color: #f59e0b; text-shadow: 0 0 20px #f59e0b, 0 0 40px #ef4444; margin: 0; padding: 0; letter-spacing: 4px;">
+      LEVEL UP!
+    </h1>
+    <p id="levelUpMessage" style="font-size: 24px; color: #ffffff; margin: 20px 0 30px 0; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+      次からは「〇〇」に突入！
+    </p>
+    <button id="btnLevelUpClose" style="font-size: 20px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; padding: 12px 36px; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(29, 78, 216, 0.5); transition: transform 0.2s;">
+      次のレベルへ進む ➔
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes popScale {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+#btnLevelUpClose:hover {
+  transform: scale(1.05);
+}
+</style>
+
+  <script>
+
+    // 💡 音声オブジェクトを作成（GitHubのRAWデータURLを指定）
+    const hazureAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/hazure.wav");
+    const seikaiAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/seikai.mp3");
+    const clickAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/kurikku.mp3");
+    const tutorialMissAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/tigauyo.mp3");
+    const nextQueAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/nextQue.mp3"); // 👈 追加
+    const levelUpAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/upLevel.mp3");
+    levelUpAudio.volume = 0.5; // 💡 音量はここで調整できます（0.0 〜 1.0）
+    // --- 🎵【新設】クリック音の読み込み ---
+    const click1Audio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/click.mp3");
+    clickAudio.volume = 0.4; // 💡 音量はここで調整（0.0 〜 1.0）
+    const gameClearAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/gameclear.mp3");
+    gameClearAudio.volume = 0.5; // 💡 音量はここで調整（0.0 〜 1.0）
+
+    const candidates = {
+      "A,B": ["Ag", "Al", "Au", "Br"],
+      "C": ["C", "Ca", "Cl", "Cr", "Cu"],
+      "F,H,I": ["Fe", "H", "Hg", "I"],
+      "K,L,M": ["K", "Li", "Mg", "Mn"],
+      "N,O,P": ["N","Na", "Ni", "O", "Pb", "Pt"],
+      "S,Z": ["S", "Sn", "Zn"],
+      "価数": ["+", "2+", "3+", "4+", "－", "2－", "3－"],
+      "原子数": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+      "係数": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+      "＋－": [ "－", "(", ")", "･"],
+    };
+
+    const levelDescriptions = {
+    1: "入力練習",
+    2: "基本問題",
+    3: "さあできるかな",
+    4: "絶対に覚えろ頻出反応式",
+    5: "酸シリーズ",
+    6: "よく迷う反応式"
+    };
+
+    const levelPoints = {
+    1: 1,  // レベル1：10点
+    2: 2,  // レベル2：20点
+    3: 3,  // レベル3：30点
+    4: 4,  // レベル4：40点
+    5: 5,  // レベル5：50点
+    6: 6   // レベル6：60点
+    };
+
+    // 問題データの配列
+
+    let quizLevels = {
+    1: [ // --- 入力練習 ---
+        { question: "Znを書け",
+            baseLeft: "亜鉛",
+            correctLeft: ["亜鉛"], 
+            correctRight: ["Zn"],
+            tutorial: ["右辺","S,Z", "Zn", "提出"],
+            tutorialExplanation: [
+            "まず、【右辺】ボタンを押して入力を開始します。",
+            "「Zn」を入力するために、【S,Z】を押します。",
+            "候補から【Zn】を選んでください。",
+            "最後に【提出】ボタンを押して完成です！" ],  },
+        { question: "H₂を書け",
+            baseLeft: "水素",
+            correctLeft: ["水素"], 
+            correctRight: ["H2_"],
+            tutorial: ["右辺","F,H,I", "H", "原子数", "2", "提出"],
+            tutorialExplanation: [
+            "まず、【右辺】ボタンを押して入力を開始します。",
+            "「H」を入力するために、【F,H,I】を押します。",
+            "候補から【H】を選んでください。",
+            "H₂にするために、【原子数】を押します。",
+            "候補から【2】を選んでください。（H₂になります）",
+            "最後に【提出】ボタンを押して完成です！" ],  },
+        { question: "水素が水素イオンになった（係数不要）",
+            baseLeft: [], 
+            correctLeft: ["H2_"], 
+            correctRight: ["H+^"], 
+            tutorial: ["左辺","F,H,I", "H", "原子数", "2","右辺","F,H,I", "H", "価数", "+", "提出"],
+            tutorialExplanation: [
+                "まず、【左辺】ボタンを押して入力を開始します。",
+                "「H」を入力するために、【F,H,I】を押します。",
+                "候補から【H】を選んでください。",
+                "H₂にするために、【原子数】を押します。",
+                "候補から【2】を選んでください。（H₂になります）",
+                "【右辺】ボタンを押します。",
+                "「H」を入力するために、【F,H,I】を押します。",
+                "候補から【H】を選んでください。",
+                " H⁺ するために、【価数】を押します。",
+                "候補から【＋】を選んでください。",
+                "最後に【提出】ボタンを押して完成です！" ], },
+        { question: "Cl2_のなれの果ては？（係数不要）", baseLeft: "Cl2_",correctLeft: ["Cl2_"], correctRight: ["Cl-^"],},
+    ],
+    2: [    // --- 基本問題 ---
+        { question: "H2_が酸化された",baseLeft: "H2_",correctLeft: ["H2_"], correctRight: ["2H+^","2e-^"],
+            tutorial: ["右辺", "F,H,I", "H", "価数", "+", "係数", "2", "+", "e-^", "係数", "2", "提出"],
+            tutorialExplanation: [
+                "まず、なれの果ての物質を書くので【右辺】ボタンを押す。",
+                "「H」を入力するために、グループボタン【F,H,I】を押す。",
+                "候補から【H】を選ぶ。",
+                "水素イオンのプラス符号（⁺）を入力するために、【価数】ボタンを押す。",
+                "候補から【＋】を選ぶ。（H⁺ になる）",
+                "H⁺ の数を合わせるので，【係数】ボタンを押す。",
+                "候補から【2】を選ぶ。（先頭に割り込んで 2H⁺ になる）",
+                "次の物質と繋ぐプラスを入力するために、【＋】を押す。（2H⁺ ＋ になる）",
+                "【e⁻】ボタンを押す。（2H⁺ ＋ e⁻ になる）",
+                "全体の電荷を合わせるために、【係数】ボタンを押す。",
+                "候補から【2】を選ぶ。（e⁻ の前に2が入り、2H⁺ ＋ 2e⁻ になる）",
+                "最後に【提出】ボタンを押して、半反応式の完成！"],},
+        { question: "Cl2_が酸化剤として働いた",baseLeft: "Cl2_",correctLeft: ["Cl2_","2e-^"], correctRight: ["2Cl-^"],
+            tutorial: ["右辺","C","Cl","価数", "－","係数", "2","左辺", "e-^","係数", "2", "提出"],
+            tutorialExplanation: ["まず、なれの果てを書くので【右辺】ボタンを押す。",
+                "「Cl」を入力するために、グループボタン【C】を押す。",
+                "候補から【Cl】を選ぶ。",
+                "塩化物イオンのマイナス符号（⁻）を入力するために、【価数】ボタンを押す。",
+                "候補から【－】を選ぶ。（Cl⁻ になる）",
+                "Clの数を合わせるので、【係数】ボタンを押す。",
+                "候補から【2】を選ぶ。（先頭に割り込んで 2Cl⁻ になる）",
+                "次は，左辺を書くので【左辺】ボタンを押す。",
+                "【e⁻】ボタンを押す。（Cl₂ ＋ e⁻ になる）",
+                "両辺の電荷を合わせるために【係数】ボタンを押す。",
+                "候補から【2】を選ぶ。（自動的Cl₂ ＋ 2e⁻ になる）",
+                "最後に【提出】ボタンを押して、半反応式の完成です！"]},
+        { question: "Sn2^+^のなれの果ては？", baseLeft: "Sn2^+^", correctLeft: ["Sn2^+^"], correctRight: ["Sn4^+^"],},
+        { question: "Fe2^+^のなれの果ては？", baseLeft: "Fe2^+^", correctLeft: ["Fe2^+^"], correctRight: ["Fe3^+^"],},
+        { question: "I-^のなれの果ては？（係数不要）", baseLeft: "I-^", correctLeft: ["I-^"], correctRight: ["I2_"],},
+        { question: "Sn2^+^が還元剤として働いた",baseLeft: "Sn2^+^",correctLeft: ["Sn2^+^"],correctRight: ["Sn4^+^","2e-^"]},
+        { question: "硫酸鉄(Ⅱ)が還元剤として働いた",baseLeft: "Fe2^+^",correctLeft: ["Fe2^+^"],correctRight: ["Fe3^+^","e-^"]},
+        { question: "ヨウ化カリウムが還元剤として働いた",baseLeft: "2I-^",correctLeft: ["2I-^"],correctRight: ["I2_","2e-^"]},
+    ],
+    3: [// --- さあできるかな ---
+        { question: "SO2_が還元剤のとき，なれの果ては？", baseLeft: "SO2_", correctLeft: ["SO2_"], correctRight: ["SO4_2^-^"],},
+        { question: "SO2_が酸化剤のとき，なれの果ては？", baseLeft: "SO2_", correctLeft: ["SO2_"], correctRight: ["S"],},
+        { question: "二酸化硫黄が酸化剤として働いた", baseLeft: "SO2_", correctLeft: ["SO2_","4H+^","4e-^"], correctRight: ["S","2H2_O"],
+            tutorial: ["右辺","S,Z","S", "+","H2_O","係数", "2","左辺", "H+^","係数", "4", "+", "e-^","係数", "4", "提出"],
+            tutorialExplanation: ["まず、なれの果てを書くので【右辺】ボタンを押す。",
+                "「S」を入力するために、グループボタン【S,Z】を押す。",
+                "候補から【S】を選ぶ。",
+                "次に両辺のOの数を合わせるための H₂O をこの後に書く。物質を繋ぐプラスを入力するために、【＋】を押す。",
+                "【H₂O】ボタンを押す。（S ＋ H₂O になる）",
+                "Oの数を合わせるので、【係数】ボタンを押す。",
+                "候補から【2】を選ぶ。（割り込んで S ＋ 2H₂O になる）",
+                "Hの数を合わせるための H⁺ を左辺に書くので、【左辺】ボタンを押す。",
+                "【H⁺】ボタンを押す。（SO₂ ＋ H⁺ になる）",
+                "Hの数を合わせるために【係数】ボタンを押す。",
+                "候補から【4】を選ぶ。（自動的SO₂ ＋ 4H⁺ になる）",
+                "左辺の電荷は＋4，右辺の電荷は0。e⁻ は左辺に書くから,このまま物質を繋ぐプラスを入力するために、【＋】を押す。",
+                "【e⁻】ボタンを押す。（SO₂ ＋ 4H⁺ ＋ e⁻ になる）",
+                "両辺の電荷を合わせるために【係数】ボタンを押す。",
+                "候補から【4】を選ぶ。（自動的SO₂ ＋ 4H⁺ ＋ 4e⁻ になる）",
+                "最後に【提出】ボタンを押して、半反応式の完成です！"]},
+        {question: "二酸化硫黄が還元剤として働いた",baseLeft: "SO2_",correctLeft: ["SO2_","2H2_O"],correctRight: ["SO4_2^-^","2e-^","4H+^"],
+            tutorial: ["右辺","S,Z","S","N,O,P","O","原子数","4","価数","2－", "左辺","H2_O/係数","係数/2", "2/H2_O", "右辺", "H+^/係数","係数/4", "4/H+^", "+", "e-^/係数","係数/2", "2/e-^", "提出"],
+            tutorialExplanation: ["まず、なれの果てを書くので【右辺】ボタンを押す。",
+                "なれの果てを書け。",//s,z
+                "なれの果てを書け。",//s
+                "なれの果てを書け。",//n,o,p
+                "なれの果てを書け。",//o
+                "なれの果てを書け。",//原子数
+                "なれの果てを書け。",//4
+                "なれの果てを書け。",//価数
+                "なれの果てを書け。",//2-
+                "左辺に移動しH₂OでOの数を合わせよ。",//左辺
+                "H₂OでOの数を合わせよ。",//H2O
+                "H₂OでOの数を合わせよ。",//係数
+                "H₂OでOの数を合わせよ。",//2
+                "右辺に移動しH⁺でHの数を合わせよ。",//右辺
+                "H⁺でHの数を合わせよ。",//H+
+                "H⁺でHの数を合わせよ。",//係数
+                "H⁺でHの数を合わせよ。",//4
+                "物質を繋ぐプラスを入力するために、【＋】を押す。",
+                "e⁻の数を合わせよ。",//H+
+                "e⁻の数を合わせよ。",//係数
+                "e⁻の数を合わせよ。",//4
+                "最後に【提出】ボタンを押して、半反応式の完成です！"]},    
+
+    ],
+    4: [// --- 絶対に覚えろ ---
+        { question: "MnO4_-^が酸性で反応したときのなれの果ては？", baseLeft: "MnO4_-^", correctLeft: ["MnO4_-^"],correctRight: ["Mn2^+^"], },
+        { question: "Cr2_O7_2^-^が酸性で反応したときのなれの果ては？", baseLeft: "Cr2_O7_2^-^", correctLeft: ["Cr2_O7_2^-^"], correctRight: ["Cr3^+^"], },
+        { question: "過マンガン酸イオンが硫酸酸性で酸化剤として働いた",baseLeft: "MnO4_-^",
+            correctLeft: ["MnO4_-^","8H+^","5e-^"],correctRight: ["Mn2^+^","4H2_O"],
+            tutorial: ["右辺","K,L,M","Mn","価数","2+", "+","H2_O/係数","係数/4", "4/H2_O", "左辺", "H+^/係数","係数/8", "8/H+^", "+", "e-^/係数","係数/5", "5/e-^", "提出"],
+            tutorialExplanation: ["まず、なれの果てを書くので【右辺】ボタンを押す。",
+                "なれの果てを書け。",//klm
+                "なれの果てを書け。",//mn
+                "なれの果てを書け。",//価数
+                "なれの果てを書け。",//2+
+                "物質を繋ぐプラスを入力するために、【＋】を押す。",
+                "H₂OでOの数を合わせよ。",//H2O
+                "H₂OでOの数を合わせよ。",//係数
+                "H₂OでOの数を合わせよ。",//4
+                "左辺に移動しH⁺でHの数を合わせよ。",//左辺
+                "H⁺でHの数を合わせよ。",//H+
+                "H⁺でHの数を合わせよ。",//係数
+                "H⁺でHの数を合わせよ。",//8
+                "物質を繋ぐプラスを入力するために、【＋】を押す。",
+                "e⁻の数を合わせよ。",//H+
+                "e⁻の数を合わせよ。",//係数
+                "e⁻の数を合わせよ。",//5
+                "最後に【提出】ボタンを押して、半反応式の完成です！"]},    
+        { question: "〔復習〕過マンガン酸イオンが硫酸酸性で酸化剤として働いた",baseLeft: "MnO4_-^",correctLeft: ["MnO4_-^","8H+^","5e-^"],correctRight: ["Mn2^+^","4H2_O"]},
+        { question: "二クロム酸イオンが硫酸酸性で酸化剤として働いた",baseLeft: "Cr2_O7_2^-^",correctLeft: ["Cr2_O7_2^-^","14H+^","6e-^"],correctRight: ["2Cr3^+^","7H2_O"]},
+    ],
+    5: [    //------------------酸シリーズ　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　
+        { question: "濃HNO3_のなれの果ては？", baseLeft: "HNO3_", correctLeft: ["HNO3_"],  correctRight: ["NO2_"], },
+        { question: "希HNO3_のなれの果ては？", baseLeft: "HNO3_", correctLeft: ["HNO3_"],  correctRight: ["NO"], },
+        { question: "熱濃H2_SO4_のなれの果ては？", baseLeft: "H2_SO4_", correctLeft: ["H2_SO4_"], correctRight: ["SO2_"],},
+        { question: "濃硝酸が酸化剤として働いた",baseLeft: "HNO3_",correctLeft: ["HNO3_","H+^","e-^"],correctRight: ["NO2_","H2_O"]},
+        { question: "希硝酸が酸化剤として働いた",baseLeft: "HNO3_",correctLeft: ["HNO3_","3H+^","3e-^"],correctRight: ["NO","2H2_O"]},
+        { question: "熱濃硫酸が酸化剤として働いた",baseLeft: "H2_SO4_",correctLeft: ["H2_SO4_","2H+^","2e-^"],correctRight: ["SO2_","2H2_O"]},
+    ],
+    6: [    //------------------よく迷うシリーズ
+        { question: "酸化剤のH2_O2_のなれの果ては？",baseLeft: "H2_O2_",correctLeft: ["H2_O2_"],correctRight: ["H2_O"],},
+        { question: "還元剤のH2_O2_のなれの果ては？",baseLeft: "H2_O2_",correctLeft: ["H2_O2_"],correctRight: ["O2_"],},
+        { question: "H2_Sのなれの果ては？",baseLeft: "H2_S",correctLeft: ["H2_S"], correctRight: ["S"],},
+        { question: "(COOH)2_のなれの果ては？",baseLeft: "(COOH)2_",correctLeft: ["(COOH)2_"], correctRight: ["CO2_"],},
+        { question: "過酸化水素が酸化剤として働いた",baseLeft: "H2_O2_",correctLeft: ["H2_O2_","2H+^","2e-^"],correctRight: ["2H2_O"]},
+        { question: "過酸化水素が還元剤として働いた",baseLeft: "H2_O2_",correctLeft: ["H2_O2_"],correctRight: ["O2_","2e-^","2H+^"]},
+        { question: "硫化水素が還元剤として働いた",baseLeft: "H2_S",correctLeft: ["H2_S"],correctRight: ["S","2e-^","2H+^"]},
+        { question: "シュウ酸が還元剤として働いた",baseLeft: "(COOH)2_",correctLeft: ["(COOH)2_"],correctRight: ["2CO2_","2e-^","2H+^"]},
+        { question: "酸性でのO2_のなれの果ては？",baseLeft: "O2_",correctLeft: ["O2_"], correctRight: ["H2_O"],},
+        { question: "中性塩基性でのO2_のなれの果ては？",baseLeft: "O2_",correctLeft: ["O2_"], correctRight: ["OH-^"],},
+        { question: "酸性でのO3_のなれの果ては？",baseLeft: "O3_",correctLeft: ["O3_"], correctRight: ["H2_O"],},    
+        { question: "中性塩基性でのO3_のなれの果ては？", baseLeft: "O3_",correctLeft: ["O3_"], correctRight: ["OH-^"], },
+        { question: "酸性で酸素が酸化剤として働いた",baseLeft: "O2_",correctLeft: ["O2_","4H+^","4e-^"],correctRight: ["2H2_O"]},
+        { question: "中性や塩基性で酸素が酸化剤として働いた",baseLeft: "O2_",correctLeft: ["O2_","2H2_O","4e-^"],correctRight: ["4OH-^"]},
+        { question: "酸性でオゾンが酸化剤として働いた",baseLeft: "O3_",correctLeft: ["O3_","2H+^","2e-^"],correctRight: ["H2_O","O2_"]},
+        { question: "中性や塩基性でオゾンが酸化剤として働いた",baseLeft: "O3_",correctLeft: ["O3_","H2_O","2e-^"],correctRight: ["2OH-^","O2_"]},
+        { question: "MnO4_-^が中性で反応したときのなれの果ては？", baseLeft: "MnO4_-^", correctLeft: ["MnO4_-^"],correctRight: ["MnO2_"], },
+        { question: "過マンガン酸イオンが中性で酸化剤として働いた",baseLeft: "MnO4_-^",baseRight: "4OH-^",correctLeft: ["MnO4_-^","2H2_O","3e-^"],correctRight: ["MnO2_","4OH-^"]},
+        ]
+    };
+
+    let currentQuizIndex = 0;
+    let currentSide = "";
+     
+    let leftRawString = "";  
+    let rightRawString = ""; 
+    let historyStack = [];      
+    let tutorialStep = 0; 
+    let tutorialRouteIndex = -1; // 💡 -1:未決定, 0:左ルート(1番目), 1:右ルート(2番目)
+    let totalScore = 0;      // 💡 もし無ければ、これも一緒にここに書いておきます
+
+    // 💡【新設】ギブアップして正解できなかった問題を溜めておくリスト
+    let giveUpQuizList = []; 
+    // 💡【新設】今「復習モード」で解いているかどうかを判定するフラグ
+    let isReviewMode = false; 
+    let currentReviewIndex = 0;
+
+    const questionTextEl = document.getElementById("questionText");
+    const displayLeftEl = document.getElementById("displayLeft");
+    const displayRightEl = document.getElementById("displayRight");
+    const naviTextEl = document.getElementById("naviText");
+    const nextBtnAreaEl = document.getElementById("nextBtnArea");
+    const candidateAreaEl = document.getElementById("candidateArea");
+
+let quizList = []; // 💡 自動生成される全問通しリスト
+
+// 💡 日本語から英語名（flattenQuizList）に変える
+function flattenQuizList() {
+  quizList = [];
+  Object.keys(quizLevels).forEach(level => {
+    quizLevels[level].forEach(quiz => {
+      quiz.level = parseInt(level); 
+      quizList.push(quiz);
+    });
+  });
+}
+
+    // --- ナビゲーション表示を更新する関数（理由コメント対応版） ---
+    function updateNavi(successMessage) {
+      const q = quizList[currentQuizIndex];
+      if (!q) return;
+      // 💡 チュートリアル中かつ、理由コメントデータが存在する場合
+      if (q.tutorial && q.tutorialExplanation && tutorialStep < q.tutorial.length) {
+        // 現在のステップに対応する「理由」を表示する
+        naviTextEl.innerText = `💡 【ナビ】: ${q.tutorialExplanation[tutorialStep]}`;
+        return;
+      }
+      
+      // チュートリアルが終わった、または通常の問題の場合（従来の処理）
+      if (q.tutorial && tutorialStep >= q.tutorial.length) {
+        naviTextEl.innerText = "✨ チュートリアルクリア！「提出」ボタンを押してください。";
+        return;
+      }
+      
+      // 通常時のメッセージ
+      naviTextEl.innerText = successMessage || "【左辺】または【右辺】を選んで入力を開始してください。";
+    }
+
+
+    function clearCandidates() {
+      candidateAreaEl.innerHTML = '<span style="color: #64748b; font-size: 15px;">グループボタンを押すとここに候補が出ます</span>';
+    }
+
+    // 💡 クイズの初期化関数
+function initQuiz() {
+      // 💡【改造】今どの問題を出すかをモードによって切り替える
+      let currentQuiz;
+      
+      if (isReviewMode) {
+        // 💡 復習モードのとき
+        if (currentReviewIndex >= giveUpQuizList.length) {
+          // 復習リストをすべて消化した！
+          isReviewMode = false;
+          giveUpQuizList = []; // リストを空にする
+          if (typeof saveGameProgress === "function") saveGameProgress();
+
+          // 💡【ここが重要！】通常問題がすべて終わった後での復習完了なら、ここで晴れて完全クリア！
+          if (currentQuizIndex >= quizList.length) {
+            showGameClear();
+            return;
+          } else {
+            // ゲーム途中の復習（続きから再開した直後など）だった場合は、通常ルートの続きに戻る
+            alert("🎉 ギブアップした問題の復習がすべて完了しました！通常の続きに戻ります。");
+            currentQuiz = quizList[currentQuizIndex];
+          }
+        } else {
+          currentQuiz = giveUpQuizList[currentReviewIndex];
+        }
+      } else {
+        // 💡 通常モードのとき
+        if (currentQuizIndex >= quizList.length) {
+          // 念のための防衛策：もし通常問題が終わっているのにここに来たらギブアップチェック
+          if (giveUpQuizList && giveUpQuizList.length > 0) {
+            isReviewMode = true;
+            currentReviewIndex = 0;
+            currentQuiz = giveUpQuizList[currentReviewIndex];
+          } else {
+            showGameClear();
+            return;
+          }
+        } else {
+          currentQuiz = quizList[currentQuizIndex];
+        }
+      }
+
+      if (!currentQuiz) {
+        showGameClear();
+        return;
+      }
+
+      // 💡 タイトル表示（復習モードの時は「【復習】」と表示させる）
+      const lvNum = currentQuiz.level || 1;
+      let lvName = isReviewMode ? "🔥 復習" : (levelDescriptions[lvNum] || "問題");
+      if (Array.isArray(lvName)) lvName = lvName[0];
+      
+      const titleEl = document.getElementById("questionTitle");
+      if (titleEl) {
+        if (isReviewMode) {
+          titleEl.innerText = `【${lvName}】 (${currentReviewIndex + 1} / ${giveUpQuizList.length})`;
+        } else {
+          const currentLevelQuizzes = quizLevels[lvNum] || [];
+          const subIndex = currentLevelQuizzes.indexOf(currentQuiz) + 1;
+          titleEl.innerText = `【${lvName}】 (${subIndex} / ${currentLevelQuizzes.length})`;
+        }
+      }
+
+      questionTextEl.innerHTML = parseToHtml(currentQuiz.question, true);
+      
+      currentSide = "";
+      
+      // 左辺初期文字
+      if (currentQuiz.baseLeft && typeof currentQuiz.baseLeft === "string" && currentQuiz.baseLeft !== "") {
+        leftRawString = currentQuiz.baseLeft;
+      } else { leftRawString = ""; }
+      
+      // 右辺初期文字
+      if (currentQuiz.baseRight && typeof currentQuiz.baseRight === "string" && currentQuiz.baseRight !== "") {
+        rightRawString = currentQuiz.baseRight;
+      } else { rightRawString = ""; }
+      
+      historyStack = [];
+      tutorialStep = 0; 
+      tutorialRouteIndex = -1;
+      
+      nextBtnAreaEl.style.display = "none";
+      clearCandidates();
+      saveState();
+      updateDisplay();
+      updateNavi();
+    // 💡【追加】新しい問題が表示されたタイミングで、その場所を自動セーブ！
+      if (typeof saveGameProgress === "function") {
+        saveGameProgress();
+      }
+    }
+
+
+    function saveState() {
+      historyStack.push({
+        currentSide: currentSide,
+        leftRawString: leftRawString,
+        rightRawString: rightRawString
+      });
+    }
+
+// --- 画面表示を更新する関数 ---
+    function updateDisplay() {
+      const currentQuiz = quizList[currentQuizIndex];
+      if (!currentQuiz) return;
+    
+      // 左辺の組み立て
+      let leftHtml = "";
+      if (leftRawString && leftRawString.trim() !== "") {
+        leftHtml += parseToHtml(leftRawString, false);
+      }
+      if (currentSide === "left") leftHtml += '<span class="cursor"></span>';
+
+      // 右辺の組み立て
+      let rightHtml = '<span class="reaction-arrow">→</span>';
+      
+      // 💡 rightRawString に文字（初期文字、または入力した文字）が入っていればHTMLに変換して表示
+      if (rightRawString && rightRawString.trim() !== "") {
+        rightHtml += parseToHtml(rightRawString, false);
+      }
+      if (currentSide === "right") rightHtml += '<span class="cursor"></span>';
+      
+      displayLeftEl.innerHTML = leftHtml;
+      displayRightEl.innerHTML = rightHtml;
+    }
+
+    // 💡 内部データを画面表示用のHTMLに変換する関数（カッコ対応・内部文字安全版）
+    function parseToHtml(rawStr, isBase) {
+      if (!rawStr) return "";
+      let html = "";
+      let inSuper = false;
+      let inSub = false;
+
+      for (let i = 0; i < rawStr.length; i++) {
+        let char = rawStr[i];
+        let nextChar = (i + 1 < rawStr.length) ? rawStr[i + 1] : "";
+
+        if (nextChar === "^") {
+          // 次の指示が上付き（価数など）
+          if (!inSuper) {
+            if (inSub) { html += "</sub>"; inSub = false; }
+            html += "<sup class='ion-charge'>";
+            inSuper = true;
+          }
+          if (char === "+") html += "＋";
+          else if (char === "-") html += "－";
+          else html += char;
+          i++; // '^' をスキップ
+        } else if (nextChar === "_") {
+          // 次の指示が下付き（原子数など）
+          if (!inSub) {
+            if (inSuper) { html += "</sup>"; inSuper = false; }
+            html += "<sub>";
+            inSub = true;
+          }
+          html += char;
+          i++; // '_' をスキップ
+        } else {
+          // 通常の文字（元素記号、結合のプラス、カッコなど）
+          if (inSuper) { html += "</sup>"; inSuper = false; }
+          if (inSub) { html += "</sub>"; inSub = false; }
+
+          if (char === "+") {
+            // 独立したプラス（物質の結合）は前後にスペースを空けて見やすく表示
+            html += " <span class='plus-sign'>＋</span> ";
+          } else if (char === " ") {
+            // 内部的な区切りスペースは画面上では非表示にする
+            html += "";
+          } else {
+            // カッコ「(」「)」や通常のアルファベット・数字はそのまま表示
+            html += char;
+          }
+        }
+      }
+      // タグの閉じ忘れ防止
+      if (inSuper) html += "</sup>";
+      if (inSub) html += "</sub>";
+      return html;
+    }
+
+    // アニメーション関数
+    function animateKeyInput(btn, val, callback){
+        if (clickAudio) {
+            clickAudio.currentTime = 0;
+            clickAudio.play().catch(err => console.log("クリック音再生失敗:", err));
+        }
+        const flying = document.createElement("div");
+      flying.className = "fly-char";
+      flying.innerText = val.replace("^", "").replace("_", "");
+      document.body.appendChild(flying);
+
+      const btnRect = btn.getBoundingClientRect();
+      flying.style.left = btnRect.left + btnRect.width/2 + "px";
+      flying.style.top = btnRect.top + btnRect.height/2 + "px";
+
+      const answerRect = document.getElementById("answerArea").getBoundingClientRect();
+      const targetX = answerRect.left + answerRect.width/2 - btnRect.left;
+      const targetY = answerRect.top - btnRect.top;
+
+      flying.style.setProperty("--moveX", targetX + "px");
+      flying.style.setProperty("--moveY", targetY + "px");
+
+      flying.addEventListener("animationend", () => {
+        flying.remove();
+        callback();
+      });
+    }
+
+// チュートリアル用：親ボタン（グループキー）を押せるかどうかの判定ガード
+    function canOpenCategory(category) {
+      const q = quizList[currentQuizIndex];
+      if (!q || !q.tutorial || tutorialStep >= q.tutorial.length) return true; 
+      const currentStep = q.tutorial[tutorialStep];
+      if (currentStep.includes("/")) {
+        const allowedChoices = currentStep.split("/");
+        // 💡 ルートが決まっていればそのルートの正解だけを、決まってなければ両方を対象にする
+        const targets = (tutorialRouteIndex !== -1) ? [allowedChoices[tutorialRouteIndex]] : allowedChoices;
+        const isAllowed = targets.some(choice => {
+          return choice === category || (candidates[category] && candidates[category].includes(choice));
+        });
+        if (isAllowed) return true;
+        const guideText = targets.join(" または ");
+        naviTextEl.innerText = `⚠️ 違うボタンです！ いまは「${guideText}」に関係するボタンを押してください。`;
+        return false;
+      }
+      // 通常ステップの判定
+      if (category === currentStep || (candidates[category] && candidates[category].includes(currentStep))) {
+        return true;
+      }
+      naviTextEl.innerText = `⚠️ 違うボタンです！ いまは「${currentStep}」に関係するボタンを押してください。`;
+      return false;
+    }
+
+// チュートリアル最終入力判定用関数（完全一本化版）
+    function checkTutorial(action) {
+      const q = quizList[currentQuizIndex];
+      if (!q || !q.tutorial || tutorialStep >= q.tutorial.length) return true; 
+
+      const currentStep = q.tutorial[tutorialStep];
+      
+      // 💡 A. 分岐ルート（"/" が含まれるとき）
+      if (currentStep.includes("/")) {
+        const allowedChoices = currentStep.split("/");
+        
+        // 1手目でルートがまだ未定のとき
+        if (tutorialRouteIndex === -1) {
+          const clickedIndex = allowedChoices.indexOf(action);
+          if (clickedIndex !== -1) {
+            tutorialRouteIndex = clickedIndex; // 選択したインデックス（0番目か1番目）を固定
+            tutorialStep++;
+            return true;
+          }
+        } 
+        // 2手目以降（すでにルートが確定しているとき）
+        else {
+          if (action === allowedChoices[tutorialRouteIndex]) {
+            tutorialStep++;
+            return true;
+          }
+        }
+      } 
+      // 💡 B. 通常のステップ（一本道の親ボタン、子ボタン、左辺、提出などすべて共通）
+      else if (action === currentStep) {
+        // 通常ステップを通ったら念のためルート記憶をリセット
+        tutorialRouteIndex = -1; 
+        tutorialStep++;
+        return true; 
+      }
+
+      // 不一致（押し間違い）のとき
+      if (tutorialMissAudio) {
+        tutorialMissAudio.currentTime = 0;
+        tutorialMissAudio.play().catch(e => {});
+      }
+      
+      let guideText = currentStep;
+      if (currentStep.includes("/") && tutorialRouteIndex !== -1) {
+        guideText = currentStep.split("/")[tutorialRouteIndex];
+      } else if (currentStep.includes("/")) {
+        guideText = currentStep.replaceAll("/", " または ");
+      }
+      
+      naviTextEl.innerText = `⚠️ 違う操作です！ 「${guideText}」 を選んでください。`;
+      return false; 
+    }
+
+
+    // --- 物質区切り「＋」を追加する関数 ---
+    function addOperator() {
+      let target = currentSide === "left" ? leftRawString : rightRawString;// 現在の入力内容を取得
+      const base = currentSide === "left" ? quizList[currentQuizIndex].baseLeft : "";// ベース部分を取得（左辺のみ存在するため、右辺は常に空文字）
+      
+      if ((target.trim() !== "" && !target.trim().endsWith("+")) || (target.trim() === "" && base !== "")) {
+        target += "+";
+      }// 末尾がすでに「＋」で終わっている場合は追加しない（連続して「＋」が入るのを防止）
+      
+      if (currentSide === "left") leftRawString = target;// 更新した文字列を保存
+      else rightRawString = target;// 画面表示を更新
+      updateDisplay();
+    }
+
+// --- グループボタン（カテゴリ）が押された時の処理 ---
+    document.querySelectorAll(".category-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+if (typeof click1Audio !== "undefined" && click1Audio) {
+          click1Audio.currentTime = 0;
+          click1Audio.play().catch(err => {});
+        }
+        const category = btn.getAttribute("data-category");
+        
+        // 💡 今のステップがこの親ボタンと一致している（または分岐に含まれる）かだけを判定
+        if (!checkTutorial(category)) return; // 違ったら弾く（checkTutorial内でエラー表示）
+
+        // 候補エリアの生成
+        candidateAreaEl.innerHTML = ""; 
+        candidates[category].forEach(val => {
+          const cBtn = document.createElement("button");
+          cBtn.className = "cand-btn";
+          cBtn.innerText = val;
+          cBtn.addEventListener("click", () => handleCandidateClick(cBtn, category, val));
+          candidateAreaEl.appendChild(cBtn);
+        });
+        
+        updateNavi();
+      });
+    });
+
+
+// --- 候補ボタンがクリックされた時の処理（中黒位置完全スキャン版） ---
+    function handleCandidateClick(btnElement, category, value) {
+      if (!currentSide) {
+        updateNavi("⚠️ 先に【左辺】または【右辺】ボタンを押してください。");
+        return;
+      }
+      if (!checkTutorial(value)) return; // チュートリアル不一致なら弾く
+
+      animateKeyInput(btnElement, value, () => {
+        saveState();
+        
+        let currentRaw = currentSide === "left" ? leftRawString : rightRawString;
+
+        if (category === "係数") {
+
+          // 💡 直前の1文字（末尾の文字）を取得
+          let lastChar = currentRaw.length > 0 ? currentRaw[currentRaw.length - 1] : "";
+
+          // 💡 【超強力判定】あらゆる種類の中黒（全角、半角、特殊ドット）をすべて定義
+          const dotCharacters = ["·", "・", "･", "\u00B7", "\uFF65", "\u30FB"];
+          
+          // 💡 直前の文字が、上記のいずれかの中黒に一致するかチェック
+          let isLastCharDot = dotCharacters.includes(lastChar);
+
+        
+        
+        if (isLastCharDot) {
+            currentRaw += value;
+          } 
+          else {
+            let lastRealPlusIndex = -1;
+            // 後ろから1文字ずつ見て、結合のプラス（+）を探す
+            for (let i = currentRaw.length - 1; i >= 0; i--) {
+              if (currentRaw[i] === "+") {
+                let nextChar = (i + 1 < currentRaw.length) ? currentRaw[i + 1] : "";
+                if (nextChar !== "^") { // イオンのプラス（+^）はスルー
+                  lastRealPlusIndex = i;
+                  break; // 一番後ろのプラスが見つかったらループを抜ける
+                }
+              }
+            }
+
+            if (currentRaw.trim() !== "" && !currentRaw.trim().endsWith("+")) {
+              if (currentRaw.endsWith("^")) {
+                currentRaw += " ";
+              }
+              
+              // 💡 ターゲットとなる物質（プラスの直後、または文字列の先頭）の開始位置を決める
+              let targetStartIndex = (lastRealPlusIndex === -1) ? 0 : lastRealPlusIndex + 1;
+              
+              // 💡 その物質の「先頭の文字」がすでに数字（0〜9）かどうかをチェック
+              let firstCharOfCompound = currentRaw[targetStartIndex] || "";
+              let isFirstCharNumber = /^[0-9]$/.test(firstCharOfCompound);
+
+              if (isFirstCharNumber) {
+                // 💡 すでに数字があるなら、その数字（2桁以上の場合は数字の塊）のすぐ後ろに新しい数字を挿入する
+                let numEndIndex = targetStartIndex;
+                while (numEndIndex < currentRaw.length && /^[0-9]$/.test(currentRaw[numEndIndex])) {
+                  numEndIndex++;
+                }
+                // 見つけた数字の塊の直後に、新しい係数を挟み込む
+                let beforePart = currentRaw.slice(0, numEndIndex);
+                let afterPart = currentRaw.slice(numEndIndex);
+                currentRaw = beforePart + value + afterPart;
+              } else {
+                // 💡 まだ数字がない（化学式から始まっている）場合は、従来通り先頭にねじ込む
+                let beforePart = currentRaw.slice(0, targetStartIndex);
+                let afterPart = currentRaw.slice(targetStartIndex);
+                currentRaw = beforePart + value + afterPart;
+              }
+            } else {
+              currentRaw += value;
+            }
+          }
+        
+        
+          if (currentSide === "left") leftRawString = currentRaw;
+          else rightRawString = currentRaw;
+        } else {
+          let appendStr = "";
+          if (category === "価数") {
+            let temp = value.replaceAll("－", "-");
+            appendStr = temp.split("").map(c => c + "^").join("");
+          } else if (category === "原子数") {
+            appendStr = value + "_";
+          } else if (category === "＋－") {
+            if (value === "＋") appendStr = "+";
+            else if (value === "－") appendStr = "-";
+            else appendStr = value; 
+          } else {
+            appendStr = value;
+          }
+
+          if (currentRaw.endsWith("^")) {
+            if (category === "価数") {
+              currentRaw = currentRaw.slice(0, -1);
+            } else {
+              appendStr = " " + appendStr;
+            }
+          }
+
+          if (currentSide === "left") leftRawString = currentRaw + appendStr;
+          else rightRawString = currentRaw + appendStr;
+        }
+
+        updateDisplay();
+        updateNavi("入力を受け付けました。");
+        clearCandidates(); // 入力成功したら候補を閉じる
+      });
+    }
+
+// --- 一発入力（マクロボタン）の処理 ---
+    document.querySelectorAll(".macro-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (!currentSide) {
+          updateNavi("⚠️ 先に【左辺】または【右辺】ボタンを押してください。");
+          return;
+        }
+        
+        const macro = btn.getAttribute("data-macro");
+        
+        // 💡 指示と違うマクロボタンなら、ここで完全に処理を終了（動作を無視）
+        if (!checkTutorial(macro)) return; 
+
+        // 正しいボタンのときのみ、以下の処理（入力・保存・描画）が実行される
+        animateKeyInput(btn, btn.innerText, () => {
+          saveState();
+          
+          let currentRaw = currentSide === "left" ? leftRawString : rightRawString;
+
+          if (currentRaw.endsWith("^")) {
+            currentRaw += " " + macro;
+          } else {
+            currentRaw += macro;
+          }
+          
+          if (currentSide === "left") leftRawString = currentRaw;
+          else rightRawString = currentRaw;
+          
+          updateDisplay();
+          updateNavi("入力を受け付けました。");
+          clearCandidates();
+        });
+      });
+    });
+
+
+// --- 機能ボタン（左辺・右辺）（初期文字・入力文字完全合算版） ---
+    document.getElementById("btnLeft").addEventListener("click", () => {
+    clickAudio.currentTime = 0; clickAudio.play().catch(e=>{});
+        if (!checkTutorial("左辺")) return;
+      saveState();
+      currentSide = "left";
+      
+      const currentQuiz = quizList[currentQuizIndex];
+      
+      // 💡 問題の初期文字(baseLeft) と ユーザーの入力(leftRawString) を合算してチェック
+      let baseStr = currentQuiz.baseLeft ? String(currentQuiz.baseLeft).trim() : "";
+      let userStr = leftRawString ? String(leftRawString).trim() : "";
+      
+      // 1. どちらにも全く何も文字がない（完全な空っぽ）のとき
+      if (baseStr === "" && userStr === "") {
+        leftRawString = ""; // 💡 完全に空のときはプラスを絶対に入れない
+      } 
+      // 2. すでにどちらかに文字が存在しているとき
+      else {
+        // 現在、ユーザー入力側の末尾がどうなっているか確認
+        // ユーザー入力が空なら初期文字の末尾、入力があるなら入力の末尾を見る
+        let fullStr = userStr !== "" ? userStr : baseStr;
+        
+        // 末尾がすでにプラスや中黒ではない場合だけ、繋ぎのプラスを自動補完
+        if (!fullStr.endsWith("+") && !fullStr.endsWith("·") && !fullStr.endsWith("･")) {
+          // ユーザー入力がすでにある場合は後ろにプラスを足し、
+          // まだ空の場合は、最初の文字の直後に繋ぐための "+" をセットする
+          leftRawString = userStr + "+";
+        }
+      }
+      
+      updateNavi("◀ 左辺の入力モードです。");
+      clearCandidates();
+      updateDisplay(); // 画面を更新
+    });
+
+    document.getElementById("btnRight").addEventListener("click", () => {
+    clickAudio.currentTime = 0; clickAudio.play().catch(e=>{});
+        if (!checkTutorial("右辺")) return;
+      saveState();
+      currentSide = "right";
+      
+      const currentQuiz = quizList[currentQuizIndex];
+      
+      // 💡 右辺側も同様に初期文字(baseRight) と ユーザーの入力(rightRawString) を合算
+      let baseStr = currentQuiz.baseRight ? String(currentQuiz.baseRight).trim() : "";
+      let userStr = rightRawString ? String(rightRawString).trim() : "";
+      
+      if (baseStr === "" && userStr === "") {
+        rightRawString = "";
+      } else {
+        let fullStr = userStr !== "" ? userStr : baseStr;
+        if (!fullStr.endsWith("+") && !fullStr.endsWith("·") && !fullStr.endsWith("･")) {
+          rightRawString = userStr + "+";
+        }
+      }
+      
+      updateNavi("▶ 右辺の入力モードです。");
+      clearCandidates();
+      updateDisplay(); // 画面を更新
+    });
+
+
+// --- Undoボタン（長押しリセット付き・共通チュートリアル判定連動版） ---
+    const undoBtn = document.getElementById("btnUndo");
+    let longPressTimer = null;
+    let isLongPress = false;
+
+    // 💡 【修正】クリックされた瞬間、共通のチュートリアル判定（checkTutorial）に通します
+    undoBtn.addEventListener("click", (e) => {
+      clickAudio.currentTime = 0; clickAudio.play().catch(e=>{});  
+      const q = quizList[currentQuizIndex];
+      if (q.tutorial && tutorialStep < q.tutorial.length) {
+        // "Undo" という文字列でチェック。チュートリアルの指示と違えばここで弾かれます
+        if (!checkTutorial("Undo")) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
+    });
+
+    // 1. ボタンを押し始めたとき
+    undoBtn.addEventListener("pointerdown", (e) => {
+      const q = quizList[currentQuizIndex];
+      if (q.tutorial && tutorialStep < q.tutorial.length) {
+        // 💡 ここでも共通判定を通して、違えば処理を終了します
+        if (!checkTutorial("Undo")) return;
+      }
+      isLongPress = false;
+      longPressTimer = setTimeout(() => {
+        isLongPress = true;
+        const ok = confirm("この問題を最初からやり直しますか？");
+        if (!ok) return;
+        initQuiz();
+      }, 1000);
+    });
+
+    // 2. ボタンから指を離したとき
+    undoBtn.addEventListener("pointerup", () => {
+      clearTimeout(longPressTimer);
+      if (isLongPress) return;
+
+      const q = quizList[currentQuizIndex];
+      if (q.tutorial && tutorialStep < q.tutorial.length) {
+        // 💡 ここでも共通判定を通します
+        if (!checkTutorial("Undo")) return; 
+      }
+
+      // 通常時の履歴戻し処理（ここは変更なし）
+      if (historyStack.length > 1) {
+        historyStack.pop();
+        let prev = historyStack[historyStack.length - 1];
+        currentSide = prev.currentSide;
+        leftRawString = prev.leftRawString;
+        rightRawString = prev.rightRawString;
+        updateDisplay();
+        naviTextEl.innerText = "ひとつ前の状態に戻しました。";
+        clearCandidates();
+      } else {
+        naviTextEl.innerText = "❌ これ以上戻せません。";
+      }
+    });
+
+    undoBtn.addEventListener("pointercancel", () => clearTimeout(longPressTimer));
+    undoBtn.addEventListener("pointerleave", () => clearTimeout(longPressTimer));
+
+// --- Give upボタン（解答枠への正解強制描画版） ---
+document.getElementById("btnGiveUp").addEventListener("click", () => {
+      // 💡 1. ギブアップの意思確認
+      const ok = confirm("本当にギブアップしますか？解答枠に正解が表示されます。");
+      if (!ok) return;
+
+      // 💡 2. モード（通常 or 復習）に応じて、現在表示中の正しい問題データを取得する
+      const q = isReviewMode ? giveUpQuizList[currentReviewIndex] : quizList[currentQuizIndex];
+      if (!q) return;
+
+      // 💡 3. 通常モード中にギブアップしたら、復習リストにこの問題を追加（重複は避ける）
+      if (!isReviewMode) {
+        if (!giveUpQuizList.some(item => item.question === q.question)) {
+          giveUpQuizList.push(q);
+          if (typeof saveGameProgress === "function") saveGameProgress(); // セーブ
+        }
+      }
+
+      // 不正解音・ギブアップ音の再生
+      if (hazureAudio) { 
+        hazureAudio.currentTime = 0; 
+        hazureAudio.play().catch(e => {}); 
+      }
+
+      // 💡 4. クイズデータから正しい「左右の化学式」を抽出・結合する
+      let leftAnswer = (q.correctLeft && q.correctLeft.length > 0) ? q.correctLeft.join("+") : "";
+      let rightAnswer = (q.correctRight && q.correctRight.length > 0) ? q.correctRight.join("+") : "";
+
+      // 左右の配列が万が一どちらも空っぽだった場合の保険
+      if (leftAnswer === "" && rightAnswer === "" && q.answer) {
+        const parts = q.answer.split("->");
+        if (parts.length === 2) {
+          leftAnswer = parts[0];
+          rightAnswer = parts[1];
+        }
+      }
+
+      // 💡 5. 入力中状態（カーソルなど）を解除
+      currentSide = "";
+      
+      // 💡 6. 左右の解答枠の「中身（innerHTML）」を直接書き換える
+      displayLeftEl.innerHTML = parseToHtml(leftAnswer, false);
+      displayRightEl.innerHTML = '<span class="reaction-arrow">→</span>' + parseToHtml(rightAnswer, false);
+      
+      // 💡 7. 画面上部のナビゲーション側のメッセージ
+      naviTextEl.innerHTML = `<span style='color:#ef4444;font-weight:bold;font-size:18px;'>⚠️ ギブアップ：解答枠に正解を表示しています</span><br><span style='color:#71717a;font-size:14px;'>5秒後に自動的に次の問題に進みます…</span>`;
+
+      // 💡 8.【ここを大改造】5秒待って、設置済みの「次の問題へ」ボタンを自動でクリックさせる！
+      setTimeout(() => {
+        const btnNext = document.getElementById("btnNext");
+        if (btnNext) {
+          btnNext.click(); // ➔ 先ほど作った、復習モードへの関門ロジックを強制的に通します！
+        } else {
+          // 万が一btnNextが見つからない場合の安全弁（元の処理）
+          currentQuizIndex++;
+          if (currentQuizIndex < quizList.length) {
+            initQuiz();
+          } else {
+            showGameClear();
+          }
+        }
+      }, 5000);
+    });
+    // --- 提出と判定 ---
+// --- 提出と判定（詳細ログ付き） ---
+    document.getElementById("btnSubmit").addEventListener("click", () => {
+      if (!checkTutorial("提出")) return;
+      const currentQuiz = quizList[currentQuizIndex];
+
+      const splitCompounds = (rawStr) => {
+        if (!rawStr) return [];
+        let cleanStr = rawStr.replace(/\s+/g, ''); 
+        let result = [];
+        let currentCompound = "";
+        let chars = cleanStr.split(""); 
+        
+        let isSuperPlus = new Array(chars.length).fill(false);
+        for(let i = 0; i < chars.length; i++) {
+          if (chars[i] === '^' && i > 0) { if (chars[i-1] === '+') { isSuperPlus[i-1] = true; } }
+        }
+        
+        for (let i = 0; i < chars.length; i++) {
+          if (chars[i] === "+" && !isSuperPlus[i]) {
+            if (currentCompound !== "") { result.push(currentCompound); }
+            currentCompound = "";
+          } else { currentCompound += chars[i]; }
+        }
+        if (currentCompound !== "") { result.push(currentCompound); }
+        return result;
+      };
+
+      // 💡 [ログ] 判定直前の生データを詳しく出力
+      console.log("=== 🛠 提出ボタンが押されました（判定開始） ===");
+      console.log("ユーザー入力の生の左辺 (leftRawString) :", JSON.stringify(leftRawString));
+      console.log("ユーザー入力の生の右辺 (rightRawString) :", JSON.stringify(rightRawString));
+
+      let userLeftParts = splitCompounds(leftRawString);
+      let userRightParts = splitCompounds(rightRawString);
+
+      // 💡 [ログ] 分解した後のユーザー解答を出力
+      console.log("🧐 分解されたユーザーの左辺リスト :", JSON.stringify(userLeftParts));
+      console.log("🧐 分解されたユーザーの右辺リスト :", JSON.stringify(userRightParts));
+
+      // 💡 [ログ] クイズデータ側の「本当の正解」を出力
+      console.log("🎯 クイズデータの正しい左辺 (correctLeft) :", JSON.stringify(currentQuiz.correctLeft));
+      console.log("🎯 クイズデータの正しい右辺 (correctRight) :", JSON.stringify(currentQuiz.correctRight));
+
+      const isFormulaMatch = (userArr, correctArr) => {
+        if (userArr.length !== correctArr.length) {
+          console.log(`❌ 長さが不一致です: ユーザー(${userArr.length}個) vs 正解(${correctArr.length}個)`);
+          return false;
+        }
+        // ソートして比較
+        let userSorted = [...userArr].sort();
+        let correctSorted = [...correctArr].sort();
+        let isMatch = JSON.stringify(userSorted) === JSON.stringify(correctSorted);
+        
+        if (!isMatch) {
+          console.log("❌ 中身が一致しませんでした。");
+          console.log("   ユーザー(ソート済):", JSON.stringify(userSorted));
+          console.log("   正解データ(ソート済):", JSON.stringify(correctSorted));
+        }
+        return isMatch;
+      };
+
+      console.log("--- 左辺の照合結果 ---");
+      const leftCorrect = isFormulaMatch(userLeftParts, currentQuiz.correctLeft);
+      
+      console.log("--- 右辺の照合結果 ---");
+      const rightCorrect = isFormulaMatch(userRightParts, currentQuiz.correctRight);
+
+      console.log("========================================");
+
+if (leftCorrect && rightCorrect) {
+        // 正解音の再生
+        seikaiAudio.currentTime = 0;
+        seikaiAudio.play().catch(err => console.log(err));
+
+        // 💡【追加】現在の問題のレベルに応じた点数を取得して加算
+        const lvNum = currentQuiz.level || 1; // レベルが取れなければ1点（安全ガード）
+        const pointsEarned = levelPoints[lvNum] || 10; // 配点設定から取得（なければ10点）
+        
+        totalScore += pointsEarned; // 総得点にプラス
+        
+        // 💡【追加】画面のスコア数値をアニメーション等も含めて更新
+        document.getElementById("currentScore").innerText = totalScore;
+
+        currentSide = ""; 
+        updateDisplay();
+        nextBtnAreaEl.style.display = "flex"; 
+        
+        // 💡 ナビゲーションメッセージに獲得点数も表示してあげると喜びが増します！
+        naviTextEl.innerHTML = `🎉 大正解！ <span style="color: #10b981; font-weight: bold;">+${pointsEarned}点</span> を獲得しました！`;
+      } else {
+        // 不正解音の再生
+        hazureAudio.currentTime = 0;
+        hazureAudio.play().catch(err => console.log(err));
+
+        naviTextEl.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>❌ 不正解です。係数や価数が合っているか確認しよう！</span>";
+      }
+    });
+
+    // ==========================================
+    // 🎉 派手な完全クリア画面の表示処理
+    // ==========================================
+    function showGameClear() {
+      const clearOverlay = document.getElementById("gameClearOverlay");
+      const finalScoreEl = document.getElementById("clearFinalScore");
+      const clearStarEl = document.getElementById("clearStarArea");
+
+      // 1. 最終スコアと獲得した星の数をクリア画面に反映
+      if (finalScoreEl) finalScoreEl.innerText = typeof totalScore !== "undefined" ? totalScore : 0;
+      if (clearStarEl && typeof clearedLevelsCount !== "undefined" && clearedLevelsCount > 0) {
+        clearStarEl.innerText = "★".repeat(clearedLevelsCount);
+      }
+
+      // ファンファーレ音などがあればここで再生する（任意）
+    if (gameClearAudio) {
+        gameClearAudio.currentTime = 0;
+        gameClearAudio.play().catch(e => {
+          console.log("オーディオ再生エラー（ユーザー操作前の可能性あり）:", e);
+        });
+      }
+
+      // 2. 画面を綺麗にフェードイン表示させる
+      if (clearOverlay) {
+        clearOverlay.style.display = "flex";
+        setTimeout(() => {
+          clearOverlay.style.opacity = "1";
+        }, 50);
+      }
+    }
+
+
+// --- 💡 正解した後に「次の問題へ」ボタンを押したときの処理（レベルアップ演出付き） ---
+document.getElementById("btnNext").addEventListener("click", () => {
+      if (typeof advanceTutorial === "function") {
+        advanceTutorial("次へ");
+      }
+
+      if (isReviewMode) {
+        // 💡 復習モード中なら、復習用の問題インデックスを1つ進める
+        currentReviewIndex++;
+      } else {
+        // 💡 通常モードなら、進む前の「現在の問題のレベル」を覚えておく
+        const oldLevel = quizList[currentQuizIndex]?.level || 1;
+
+        // クイズ番号を1つ進める
+        currentQuizIndex++;
+
+        // 💡 2. 通常の全問題が終わったかどうかの判定
+        if (currentQuizIndex >= quizList.length) {
+          // 🛑【ここを改造】もし1問でもギブアップした問題（未クリア）が残っている場合
+          if (giveUpQuizList && giveUpQuizList.length > 0) {
+            isReviewMode = true;
+            currentReviewIndex = 0;
+            
+            // 進行状況をセーブ
+            if (typeof saveGameProgress === "function") saveGameProgress(); 
+            
+            alert(`📝 通常の問題はすべて終了しました！\nここからは、途中でギブアップした問題（全 ${giveUpQuizList.length} 問）の解き直しに挑戦しよう！`);
+            
+            initQuiz();
+            return; // ここで処理を終了し、復習の1問目を表示させる
+          } else {
+            // 🏅 ギブアップした問題が1問もなければ、そのまま完全ゲームクリア！
+            showGameClear();
+            return;
+          }
+        }
+
+        // 💡 3. 進んだ後の「次の問題のレベル」を取得
+        const nextQuiz = quizList[currentQuizIndex];
+        const newLevel = nextQuiz?.level || 1;
+
+        // 💡 4. レベルが上がっていたら、派手な演出を表示する！
+        if (newLevel > oldLevel) {
+          // クリアしたレベル数を1つ増やし、星の表示を更新する
+          clearedLevelsCount++;
+          const starAreaEl = document.getElementById("starArea");
+          if (starAreaEl) {
+            starAreaEl.innerText = "★".repeat(clearedLevelsCount);
+          }
+
+          let nextLevelName = "次のステージ";
+          if (levelDescriptions && levelDescriptions[newLevel]) {
+            nextLevelName = levelDescriptions[newLevel];
+            if (Array.isArray(nextLevelName)) nextLevelName = nextLevelName[0];
+          }
+
+          // メッセージをセット
+          document.getElementById("levelUpMessage").innerText = `次からは 【${nextLevelName}】 に突入！`;
+
+          // レベルアップ音を再生
+          if (levelUpAudio) {
+            levelUpAudio.currentTime = 0;
+            levelUpAudio.play().catch(e => {});
+          }
+
+          // オーバーレイ画面をふわっと表示する
+          const overlay = document.getElementById("levelUpOverlay");
+          if (overlay) {
+            overlay.style.display = "flex";
+            setTimeout(() => { overlay.style.opacity = "1"; }, 10);
+          }
+
+          return; // ここで一旦止めて、レベルアップ画面のボタンが押されるのを待つ
+        }
+      }
+
+      // レベルが変わっていない、または復習モードの次へなら、クイズを画面に表示
+      initQuiz();
+    });
+
+    // --- 💡 レベルアップ画面の「次のレベルへ進む」ボタンを押したときの処理 ---
+    document.getElementById("btnLevelUpClose").addEventListener("click", () => {
+      const overlay = document.getElementById("levelUpOverlay");
+      overlay.style.opacity = "0";
+      
+      // アニメーションが終わるのを少し待ってから非表示にして、次のクイズを初期化
+      setTimeout(() => {
+        overlay.style.display = "none";
+        initQuiz(); // ここで満を持して次のレベルの1問目が表示される！
+      }, 500);
+    })
+
+// --- 💡 起動時のイベント処理（オープニング画面＆セーブロード連動版） ---
+    window.addEventListener("DOMContentLoaded", () => {
+      flattenQuizList(); // 💡 起動時にレベル1〜6のデータを1本に合体させます
+      
+      const startBtn = document.getElementById("btnGameStart");
+      const continueBtn = document.getElementById("btnGameContinue");
+      const openingOverlay = document.getElementById("openingOverlay");
+
+      // 1. ローカルストレージにセーブデータがあるかチェック
+      const savedRaw = localStorage.getItem("chem_reaction_game_save");
+      if (!savedRaw) {
+        // セーブデータが無ければ「続きから始める」ボタンを押せないようにする
+        if (continueBtn) continueBtn.disabled = true;
+      }
+
+      // 2. 「最初から始める」ボタンを押したとき
+      if (startBtn) {
+        startBtn.addEventListener("click", () => {
+          // データを完全に初期化
+          currentQuizIndex = 0;
+          totalScore = 0;
+          clearedLevelsCount = 0;
+          
+          // 画面上のスコアと星の表示をリセット
+          const starAreaEl = document.getElementById("starArea");
+          if (starAreaEl) starAreaEl.innerText = "";
+          const scoreEl = document.getElementById("currentScore");
+          if (scoreEl) scoreEl.innerText = "0";
+
+          // 最初のクイズを開始
+          initQuiz();
+          
+          // オープニング画面を非表示にする
+          if (openingOverlay) openingOverlay.style.display = "none";
+        });
+      }
+
+// 3. 「続きを始める」ボタンを押したとき
+      if (continueBtn) {
+        continueBtn.addEventListener("click", () => {
+          const savedRaw = localStorage.getItem("chem_reaction_game_save");
+          if (savedRaw) {
+            const saveData = JSON.parse(savedRaw);
+            
+            currentQuizIndex = saveData.currentIndex || 0;
+            totalScore = saveData.score || 0;
+            clearedLevelsCount = saveData.stars || 0;
+            // 💡 ギブアップリストを復元
+            giveUpQuizList = saveData.giveUpList || []; 
+
+            // 画面の表示復元
+            const starAreaEl = document.getElementById("starArea");
+            if (starAreaEl && clearedLevelsCount > 0) starAreaEl.innerText = "★".repeat(clearedLevelsCount);
+            const scoreEl = document.getElementById("currentScore");
+            if (scoreEl) scoreEl.innerText = totalScore;
+
+            // 💡 もしギブアップした問題が残っていたら、強制的に「復習モード」からスタート！
+            if (giveUpQuizList.length > 0) {
+              isReviewMode = true;
+              currentReviewIndex = 0;
+              alert(`⚠️ 前回ギブアップした問題が ${giveUpQuizList.length} 問あります。まずはこの復習からスタートします！`);
+            }
+          }
+          
+          initQuiz();
+          if (openingOverlay) openingOverlay.style.display = "none";
+        });
+      }
+// 🏆【新設】完全クリア画面の「タイトルへ戻る」ボタンを押したときの処理
+      const btnBackToTitle = document.getElementById("btnBackToTitle");
+      if (btnBackToTitle) {
+        btnBackToTitle.addEventListener("click", () => {
+          // 全クリアしたのでセーブデータを綺麗さっぱり削除
+          localStorage.removeItem("chem_reaction_game_save");
+          // ページをまるごとリロードして、最初のオープニング画面の状態に戻す
+          window.location.reload();
+        });
+      }
+    }); // 👈 ここで window.addEventListener をしっかり閉じます！
+
+
+    // ==========================================
+    // 💾 【外側へ引っ越し】ゲームの進行度を保存する関数本体
+    // ==========================================
+    function saveGameProgress() {
+      const idx = typeof currentQuizIndex !== "undefined" ? currentQuizIndex : 0;
+      const score = typeof totalScore !== "undefined" ? totalScore : 0;
+      const stars = typeof clearedLevelsCount !== "undefined" ? clearedLevelsCount : 0;
+
+      const saveData = {
+        currentIndex: idx,
+        score: score,
+        stars: stars,
+        // 💡 ギブアップした問題リストも一緒に保存する
+        giveUpList: giveUpQuizList 
+      };
+
+      localStorage.setItem("chem_reaction_game_save", JSON.stringify(saveData));
+    }
+
+
+    // --- 新設：その問題を最初からやり直すボタンの処理 ---
+    document.getElementById("btnResetQuestion").addEventListener("click", () => {
+      const q = quizList[currentQuizIndex];
+      // チュートリアル中の誤作動防止
+      if (q && q.tutorial && tutorialStep < q.tutorial.length) {
+        naviTextEl.innerText = "⚠️ チュートリアル中はやり直しできません";
+        return;
+      }
+      
+      const ok = confirm("この問題を最初からやり直しますか？");
+      if (ok) {
+        initQuiz();
+      }
+    });
+
+  </script>
+
+</body>
+</html>
