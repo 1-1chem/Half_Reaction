@@ -397,7 +397,7 @@ body {
   <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 20px; max-width: 550px; width: 100%; color: #cbd5e1; margin-bottom: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
     <h3 style="color: #38bdf8; margin-top: 0; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 8px; font-size: 18px;">🧪 遊び方・ルール</h3>
     <ul style="padding-left: 20px; margin: 10px 0; font-size: 14px; line-height: 1.6;">
-      <li>日本語の問題文を見て、正しい半反応式を完成させよう！</li>
+      <li>酸化還元反応で半反応式は生命線。マスターしよう！</li>
       <li><strong style="color: #f59e0b;">「左辺」「右辺」ボタン</strong>を切り替えて、元素記号や係数，下付き文字（ <span style="color: #f472b6;">₂</span>など）、イオンの価数（<span style="color: #f472b6;">⁺</span> など）を入力します。</li>
       <li>レベルが上がると配点が高くなり、Give Upなしでクリアなら<span style="color: #f59e0b;">★（星）</span>を獲得！</li>
       <li>ゲームはいつでも自動セーブされ、途中から再開可能です。</li>
@@ -449,14 +449,11 @@ body {
 
 
     <div id="questionArea" style="width: 100%; box-sizing: border-box; padding: 12px; height: auto; min-height: 120px;">
-    
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
-      
-      <div id="questionTitle" style="font-size: 18px; font-weight: bold; margin: 0; flex: 1; min-width: 200px; line-height: 1.4; word-break: break-all;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+          <div id="questionTitle" style="font-size: 18px; font-weight: bold; margin: 0; flex: 1; min-width: 200px; line-height: 1.4; word-break: break-all;">
         【問題】反応式を完成させよ
       </div>
-      
-      <div id="scoreArea" style="font-size: 18px; font-weight: bold; color: #1e40af; background: #dbeafe; padding: 4px 12px; border-radius: 6px; white-space: nowrap;">
+          <div id="scoreArea" style="font-size: 18px; font-weight: bold; color: #1e40af; background: #dbeafe; padding: 4px 12px; border-radius: 6px; white-space: nowrap;">
         SCORE: <span id="currentScore">0</span> 点
       </div>
       
@@ -853,7 +850,10 @@ function flattenQuizList() {
 function initQuiz() {
       // 💡【改造】今どの問題を出すかをモードによって切り替える
       let currentQuiz;
-      
+      nextQueAudio.currentTime = 0; // 連打・連続正解対策でリセット
+        nextQueAudio.play().catch(err => {
+          console.log("正解音の再生に失敗しました:", err);
+        });
       if (isReviewMode) {
         // 💡 復習モードのとき
         if (currentReviewIndex >= giveUpQuizList.length) {
@@ -953,6 +953,7 @@ function initQuiz() {
 // --- 画面表示を更新する関数 ---
     function updateDisplay() {
       const currentQuiz = quizList[currentQuizIndex];
+    
       if (!currentQuiz) return;
     
       // 左辺の組み立て
@@ -1645,12 +1646,12 @@ if (leftCorrect && rightCorrect) {
     }
 
 
-// --- 💡 正解した後に「次の問題へ」ボタンを押したときの処理（レベルアップ演出付き） ---
-document.getElementById("btnNext").addEventListener("click", () => {
+    // --- 💡 正解した後に「次の問題へ」ボタンを押したときの処理（レベルアップ演出付き） ---
+    document.getElementById("btnNext").addEventListener("click", () => {
       if (typeof advanceTutorial === "function") {
         advanceTutorial("次へ");
       }
-
+    
       if (isReviewMode) {
         // 💡 復習モード中なら、復習用の問題インデックスを1つ進める
         currentReviewIndex++;
