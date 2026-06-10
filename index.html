@@ -373,7 +373,15 @@ body {
   box-shadow: 0 0 25px rgba(16, 185, 129, 0.7);
 }
 
-
+/* 🧪 【新規追加】消去される化学式に引く取り消し線のスタイル */
+.delete-line {
+  text-decoration: line-through;
+  text-decoration-color: #ef4444; /* 分かりやすいように赤色の取り消し線にします */
+  text-decoration-thickness: 3px;
+  color: #94a3b8; /* 文字色を少し薄くします */
+  transition: all 0.5s ease;
+  display: inline-block;
+}
 
 
  </style>
@@ -479,7 +487,6 @@ body {
   </div>
   <div id="keyboardArea">
     <div id="candidateArea"></div>
-
     <div id="customKeyboard">
       <button class="key-btn category-btn" data-category="A,B">A,B</button>
       <button class="key-btn category-btn" data-category="C">C</button>
@@ -487,29 +494,26 @@ body {
       <button class="key-btn category-btn" data-category="K,L,M">K,L,M</button>
       <button class="key-btn category-btn" data-category="N,O,P">N,O,P</button>
       <button class="key-btn category-btn" data-category="S,Z">S,Z</button>
-      
       <button class="macro-btn btn-macro" data-macro="H+^">H⁺</button>
       <button class="macro-btn btn-macro" data-macro="H2_O">H₂O</button>
       <button class="macro-btn btn-macro" data-macro="e-^">e⁻</button>
       <button class="key-btn category-btn" data-category="価数">価数</button>
       <button class="key-btn category-btn" data-category="原子数">原子数</button>
       <button class="key-btn category-btn" data-category="係数">係数</button>
-      
-        <button class="key-btn category-btn" data-category="＋－" style="grid-column-start: 1; grid-row-start: 3;">－ ( )</button>
-      
+      <button class="key-btn category-btn" data-category="＋－" style="grid-column-start: 1; grid-row-start: 3;">－ ( )</button>
       <button class="key-btn functional-btn" id="btnLeft" style="grid-column-start: 2; grid-row-start: 3;">左辺</button>
       <button class="key-btn functional-btn" id="btnRight" style="grid-column-start: 3; grid-row-start: 3;">右辺</button>
-        <button class="key-btn macro-btn" data-macro="+" style="grid-column-start: 4; grid-row-start: 3; background-color: #3b82f6; color: white; font-weight: bold; font-size: 18px; box-shadow: 0 3px 0 #2563eb;">＋</button>      
+      <button class="key-btn macro-btn" data-macro="+" style="grid-column-start: 4; grid-row-start: 3; background-color: #3b82f6; color: white; font-weight: bold; font-size: 18px; box-shadow: 0 3px 0 #2563eb;">＋</button>      
       <button class="key-btn functional-btn" id="btnSubmit" style="grid-column: 5 / span 2; grid-row-start: 3;">提出</button>
-      
-      <button class="key-btn functional-btn" id="btnResetQuestion" style="grid-column-start: 1; grid-row-start: 4; background-color: #64748b; color: white; box-shadow: 0 3px 0 #475569;">やり直し</button>
+      <button class="key-btn functional-btn" id="btnResetQuestion" style="grid-column-start: 1; grid-row-start: 4; background-color: #000000; color: white; box-shadow: 0 3px 0 #475569;">やり直し</button>
       
       <button class="key-btn functional-btn" id="btnUndo" style="grid-column-start: 2; grid-row-start: 4;">Undo</button>
       
+      <button class="key-btn functional-btn" id="btnConvertOH" data-macro="convert_oh" style="grid-column: 3 / span 2; grid-row-start: 4; background-color: #a855f7; color: white; box-shadow: 0 3px 0 #7e22ce; font-size: 16px; display: none;">両辺にOH⁻を追加</button>      
       <button class="key-btn functional-btn" id="btnGiveUp" style="background-color: #f59e0b; color: white; box-shadow: 0 3px 0 #d97706; font-size: 15px; justify-self: end; grid-column-start: 6; grid-row-start: 4;">Give up</button>    </div>
-  </div>
-<div id="levelUpModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; font-family: sans-serif;">
-  <div style="background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 80%; max-width: 400px; animation: popIn 0.3s ease-out;">
+
+      <div id="levelUpModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; font-family: sans-serif;">
+    <div style="background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 80%; max-width: 400px; animation: popIn 0.3s ease-out;">
     <h2 style="color: #eab308; font-size: 32px; margin: 0 0 10px 0; font-weight: bold; text-shadow: 1px 1px 0 #ca8a04;">🎉 LEVEL UP!</h2>
     <p id="levelUpText" style="font-size: 18px; color: #334155; margin-bottom: 20px;">レベル 1 クリア！<br>次からは【中級編】に突入します！</p>
     
@@ -558,7 +562,7 @@ body {
     const seikaiAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/seikai.mp3");
     const clickAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/kurikku.mp3");
     const tutorialMissAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/tigauyo.mp3");
-    const nextQueAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/nextQue.mp3"); // 👈 追加
+    const nextQueAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/nextQue.mp3");  
     const levelUpAudio = new Audio("https://raw.githubusercontent.com/1-1chem/ongen/main/game_ongen/upLevel.mp3");
     levelUpAudio.volume = 0.5; // 💡 音量はここで調整できます（0.0 〜 1.0）
     // --- 🎵【新設】クリック音の読み込み ---
@@ -586,7 +590,8 @@ body {
     3: "さあできるかな",
     4: "絶対に覚えろ頻出反応式",
     5: "酸シリーズ",
-    6: "よく迷う反応式"
+    6: "よく迷う反応式",
+    7: "何問だぞ"
     };
 
     const levelPoints = {
@@ -595,14 +600,16 @@ body {
     3: 3,  // レベル3：30点
     4: 4,  // レベル4：40点
     5: 5,  // レベル5：50点
-    6: 6   // レベル6：60点
+    6: 6,   // レベル6：60点
+    7: 7  // レベル7：7点
     };
 
     // 問題データの配列
 
     let quizLevels = {
     1: [ // --- 入力練習 ---
-        { question: "Znを書け",
+
+    { question: "Znを書け",
             baseLeft: "亜鉛",
             correctLeft: ["亜鉛"], 
             correctRight: ["Zn"],
@@ -724,8 +731,7 @@ body {
                 "e⁻の数を合わせよ。",//H+
                 "e⁻の数を合わせよ。",//係数
                 "e⁻の数を合わせよ。",//4
-                "最後に【提出】ボタンを押して、半反応式の完成です！"]},    
-
+                "最後に【提出】ボタンを押して、半反応式の完成です！"]},
     ],
     4: [// --- 絶対に覚えろ ---
         { question: "MnO4_-^が酸性で反応したときのなれの果ては？", baseLeft: "MnO4_-^", correctLeft: ["MnO4_-^"],correctRight: ["Mn2^+^"], },
@@ -771,16 +777,26 @@ body {
         { question: "過酸化水素が還元剤として働いた",baseLeft: "H2_O2_",correctLeft: ["H2_O2_"],correctRight: ["O2_","2e-^","2H+^"]},
         { question: "硫化水素が還元剤として働いた",baseLeft: "H2_S",correctLeft: ["H2_S"],correctRight: ["S","2e-^","2H+^"]},
         { question: "シュウ酸が還元剤として働いた",baseLeft: "(COOH)2_",correctLeft: ["(COOH)2_"],correctRight: ["2CO2_","2e-^","2H+^"]},
-        { question: "酸性でのO2_のなれの果ては？",baseLeft: "O2_",correctLeft: ["O2_"], correctRight: ["H2_O"],},
-        { question: "中性塩基性でのO2_のなれの果ては？",baseLeft: "O2_",correctLeft: ["O2_"], correctRight: ["OH-^"],},
-        { question: "酸性でのO3_のなれの果ては？",baseLeft: "O3_",correctLeft: ["O3_"], correctRight: ["H2_O"],},    
-        { question: "中性塩基性でのO3_のなれの果ては？", baseLeft: "O3_",correctLeft: ["O3_"], correctRight: ["OH-^"], },
-        { question: "酸性で酸素が酸化剤として働いた",baseLeft: "O2_",correctLeft: ["O2_","4H+^","4e-^"],correctRight: ["2H2_O"]},
-        { question: "中性や塩基性で酸素が酸化剤として働いた",baseLeft: "O2_",correctLeft: ["O2_","2H2_O","4e-^"],correctRight: ["4OH-^"]},
-        { question: "酸性でオゾンが酸化剤として働いた",baseLeft: "O3_",correctLeft: ["O3_","2H+^","2e-^"],correctRight: ["H2_O","O2_"]},
-        { question: "中性や塩基性でオゾンが酸化剤として働いた",baseLeft: "O3_",correctLeft: ["O3_","H2_O","2e-^"],correctRight: ["2OH-^","O2_"]},
+    ],
+    7: [    //------------------難問
+        { question: "酸性条件下でのO2_のなれの果ては？",baseLeft: "O2_",correctLeft: ["O2_"], correctRight: ["H2_O"],},
+        { question: "酸性条件下でO2_が酸化剤として働いた",baseLeft: "O2_",correctLeft: ["O2_","4H+^","4e-^"],correctRight: ["2H2_O"]},
+        { question: "先ほどの式を中性や塩基性条件下での半反応式にせよ",baseLeft: "O2_ + 4H+^ + 4e-^",baseRight: "2H2_O",
+          correctLeft: ["O2_","2H2_O","4e-^"], correctRight: ["4OH-^"],
+          tutorial: ["両辺にOH⁻を追加","両辺にOH⁻を追加","両辺にOH⁻を追加","両辺にOH⁻を追加", "提出"],
+          tutorialExplanation: ["H⁺を消すために【両辺にOH⁻を追加】を押す。",
+          "H⁺が残っているので【両辺にOH⁻を追加】を押す。",
+          "H⁺が残っているので【両辺にOH⁻を追加】を押す。",
+          "H⁺が残っているので【両辺にOH⁻を追加】を押す。",
+          "H⁺が無くなったので【提出】ボタンを押して、半反応式の完成です！"]},    
+        { question: "酸性条件下でのO3_のなれの果ては？",baseLeft: "O3_",correctLeft: ["O3_"], correctRight: ["H2_O"],},    
+        { question: "酸性条件下でオゾンが酸化剤として働いた",baseLeft: "O3_",correctLeft: ["O3_","2H+^","2e-^"],correctRight: ["H2_O","O2_"]},
+        { question: "先ほどの式を中性や塩基性条件での半反応式にせよ",baseLeft: "O3_ + 2H+^ + 2e-^",baseRight: "H2_O + O2_",correctLeft: ["O3_","H2_O","2e-^"],correctRight: ["2OH-^","O2_"]},
         { question: "MnO4_-^が中性で反応したときのなれの果ては？", baseLeft: "MnO4_-^", correctLeft: ["MnO4_-^"],correctRight: ["MnO2_"], },
-        { question: "過マンガン酸イオンが中性で酸化剤として働いた",baseLeft: "MnO4_-^",baseRight: "4OH-^",correctLeft: ["MnO4_-^","2H2_O","3e-^"],correctRight: ["MnO2_","4OH-^"]},
+        { question: "過マンガン酸イオンが中性で酸化剤として働いた",baseLeft: "MnO4_-^",correctLeft: ["MnO4_-^","2H2_O","3e-^"],correctRight: ["MnO2_","4OH-^"]},
+        { question: "塩基性条件下ではホルムアルデヒドはギ酸イオンになる",baseLeft: "HCHO",correctLeft: ["HCHO"],correctRight: ["HCOO-^"]},
+        { question: "ホルムアルデヒドが塩基性で還元剤として働いてギ酸イオンになった",baseLeft: "HCHO",correctLeft: ["HCHO","3OH-^"],correctRight: ["HCOO-^","2H2_O","2e-^"]},
+
         ]
     };
 
@@ -845,6 +861,310 @@ function flattenQuizList() {
     function clearCandidates() {
       candidateAreaEl.innerHTML = '<span style="color: #64748b; font-size: 15px;">グループボタンを押すとここに候補が出ます</span>';
     }
+
+    // =================================================================
+    // 🧪 【演出強化・安全確定版】塩基性条件用の OH⁻ 変換処理ロジック
+    // =================================================================
+    const btnConvertOH = document.getElementById("btnConvertOH");
+
+    // クイズ読み込み時に「正解にOH-が含まれているか」をチェックしてボタンを表示・非表示にする関数
+    function checkOHButtonVisibility() {
+      // 💡 ボタンがHTMLにない場合のフリーズ防止ガード
+      if (!btnConvertOH) return;
+
+      const q = quizList[currentQuizIndex];
+      if (!q) return;
+
+      const hasOHInCorrect = (q.correctLeft && q.correctLeft.some(str => str.includes("OH-^"))) || 
+                             (q.correctRight && q.correctRight.some(str => str.includes("OH-^")));
+
+      if (hasOHInCorrect) {
+        btnConvertOH.style.display = "grid"; 
+      } else {
+        btnConvertOH.style.display = "none";
+      }
+    }
+
+    // 文字列から特定の物質の係数（数値）を取得するヘルパー
+    function getCoefficient(rawStr, regexKey) {
+      if (!rawStr) return 0;
+      const regex = new RegExp(`(\\d*)${regexKey}`);
+      const match = rawStr.match(regex);
+      if (!match) return 0;
+      return match[1] === "" ? 1 : parseInt(match[1]);
+    }
+
+    // 式の結合プラス（+）や余分なスペースを徹底的に綺麗にするクリーンアップ関数
+// 式の結合プラス（+）や余分なスペースを徹底的に綺麗にするクリーンアップ関数（強化版）
+    function cleanFormulaString(str) {
+      if (!str) return "";
+      return str
+        // スペースが間に挟まったプラスの連続（+ + や +  +）を1つのプラスにする
+        .replace(/\+\s*\+/g, "+")
+        // 連続するプラス（++）を1つのプラスにする
+        .replace(/\+\+/g, "+")
+        // 矢印「->」の直前にあるプラス「+ ->」を「->」にする
+        .replace(/\+\s*->/g, "->")
+        // 矢印「->」の直後にあるプラス「-> +」を「->」にする
+        .replace(/->\s*\+/g, "->")
+        // 文字列の先頭にあるプラスを消す
+        .replace(/^\s*\+/, "")
+        // 文字列の末尾にあるプラスを消す
+        .replace(/\+\s*$/, "")
+        .trim();
+    }
+
+ // 物質の係数を更新または削除する関数（バグ修正版）
+    function updateComponentCoefficient(rawStr, regexKey, newCount, replacementBase) {
+      if (!rawStr) return "";
+      
+      if (newCount <= 0) {
+        // 1. まず、指定された物質（例: 4H+^ や OH-^）そのものをピンポイントで空文字に置換
+        const regexTarget = new RegExp(`\\d*${regexKey}`, "g");
+        let temporary = rawStr.replace(regexTarget, "");
+        
+        // 2. 物質が消えたことで発生した「++」や「+ +」などのゴミを綺麗にする
+        return cleanFormulaString(temporary);
+      } else {
+        const regex = new RegExp(`(\\d*)${regexKey}`);
+        const numStr = newCount > 1 ? newCount : "";
+        return rawStr.replace(regex, `${numStr}${replacementBase}`);
+      }
+    }
+
+    // OH- の係数を1増やす、または新規追加する関数
+    function appendOrIncrementOH(rawStr) {
+      let ohCount = getCoefficient(rawStr, "OH-\\^");
+      if (ohCount > 0) {
+        return updateComponentCoefficient(rawStr, "OH-\\^", ohCount + 1, "OH-^");
+      } else {
+        if (rawStr && rawStr.trim() !== "") {
+          return cleanFormulaString(rawStr + "+OH-^");
+        } else {
+          return "OH-^";
+        }
+      }
+    }
+
+    // 💡 特殊演出用：実際の数式表示エリア（displayLeft, displayRight）に完全適合した置換関数
+    function applyDeleteLineToDisplay(side, targetText) {
+      // index.html の実際のID（displayLeft / displayRight）にマッピング
+      const areaId = side === "left" ? "displayLeft" : "displayRight";
+      const areaEl = document.getElementById(areaId);
+      if (!areaEl) return;
+
+      let currentHTML = areaEl.innerHTML;
+      let regex;
+
+      // parseToHtmlで変換された後の実際のHTML構造を狙い撃ち
+      if (targetText === "H⁺") {
+        regex = /(\d*)H<sup[^>]*>＋<\/sup>/g;
+      } else if (targetText === "OH⁻") {
+        regex = /(\d*)OH<sup[^>]*>－<\/sup>/g;
+      } else if (targetText === "H₂O") {
+        regex = /(\d*)H<sub[^>]*>2<\/sub>O/g;
+      } else {
+        const escapedTarget = targetText.replace("+", "\\+");
+        regex = new RegExp(`(\\d*)${escapedTarget}`, "g");
+      }
+      
+      // 💡 text-decoration-thickness: 4px; を追加して、取り消し線を太くしました
+      areaEl.innerHTML = currentHTML.replace(regex, (match) => {
+        return `<span class="delete-line" style="text-decoration: line-through; text-decoration-color: #ef4444; text-decoration-thickness: 4px; color: inherit; font-weight: bold; display: inline-block;">${match}</span>`;
+      });
+    }
+
+    // OH- ボタンが押されたときのアニメーションおよび変換ロジック
+// =================================================================
+    // 🔁 コマ送り制御のメインロジック（タイマーを廃止して一本化）
+    // =================================================================
+    
+    // 💡 状態を管理する変数を関数の外側に用意します
+    let ohConvertStep = 0; 
+    let isLeftHasH = false;
+    let isRightHasH = false;
+
+    // 💡 1つの確認ごとに呼び出されるメッセージ表示 ＆ 一時停止用関数
+    function showTutorialAlert(message, nextCallback) {
+      if (typeof updateNavi === "function") updateNavi(message);
+      
+      // OKを押すまでコードの進行が完全に一時停止します
+      setTimeout(() => {
+        alert(message); 
+        if (nextCallback) nextCallback();
+      }, 50); 
+    }
+
+// OH- ボタンが押されたときのアニメーションおよび変換ロジック
+    if (btnConvertOH) {
+      btnConvertOH.addEventListener("click", () => {
+        if (btnConvertOH.disabled) return; // アニメーション中の連打防止
+        
+        // 💡 【追加】チュートリアルの進行チェックを挟みます
+        // クイズデータの配列には「"両辺にOH⁻を追加"」という文字列を登録します
+        if (typeof checkTutorial === "function") {
+          if (!checkTutorial("両辺にOH⁻を追加")) return; // 間違っていたらここで処理を中断
+        }
+        
+        if (typeof clickAudio !== "undefined") {
+          clickAudio.currentTime = 0;
+          clickAudio.play().catch(e => {});
+        }
+
+        if (typeof saveState === "function") saveState();
+
+        // --- 以下、既存の中和・相殺アニメーション処理がそのまま続きます ---
+
+        // 状態チェック
+        let leftHCount = getCoefficient(leftRawString, "H\\+\\^");
+        let rightHCount = getCoefficient(rightRawString, "H\\+\\^");
+        isLeftHasH = leftHCount > 0;
+        isRightHasH = rightHCount > 0;
+
+        // ボタンを一時的に無効化
+        btnConvertOH.disabled = true;
+        btnConvertOH.style.opacity = "0.5";
+
+        // 【動作1】両辺に OH- を 1 つずつ増やす
+        leftRawString = appendOrIncrementOH(leftRawString);
+        rightRawString = appendOrIncrementOH(rightRawString);
+        if (typeof updateDisplay === "function") updateDisplay();
+
+        // H+ がない場合はここで終了
+        if (!isLeftHasH && !isRightHasH) {
+          showTutorialAlert("両辺に OH⁻ を1つ追加しました。", () => {
+            btnConvertOH.disabled = false;
+            btnConvertOH.style.opacity = "1";
+          });
+          return;
+        }
+
+        // ポップアップ①
+        ohConvertStep = 1;
+        showTutorialAlert("両辺にOH⁻を書き加えた。OKボタンを押せ。", step2_ShowStrikeThrough);
+      });
+    }
+
+    // 【動作2】H+ と OH- に取り消し線を引く
+    function step2_ShowStrikeThrough() {
+      if (isLeftHasH) {
+        applyDeleteLineToDisplay("left", "H⁺");
+        applyDeleteLineToDisplay("left", "OH⁻");
+      }
+      if (isRightHasH) {
+        applyDeleteLineToDisplay("right", "H⁺");
+        applyDeleteLineToDisplay("right", "OH⁻");
+      }
+
+      // ポップアップ②
+      ohConvertStep = 2;
+      showTutorialAlert("H⁺とOH⁻で H₂Oになる。OKボタンを押せ。", step3_TransformToWater);
+    }
+
+    // 【動作3】実際に H2O へ変換する
+    function step3_TransformToWater() {
+      let leftHCount = getCoefficient(leftRawString, "H\\+\\^");
+      let rightHCount = getCoefficient(rightRawString, "H\\+\\^");
+
+      if (isLeftHasH) {
+        let currentLeftOH = getCoefficient(leftRawString, "OH-\\^");
+        leftRawString = updateComponentCoefficient(leftRawString, "OH-\\^", currentLeftOH - 1, "OH-^");
+        leftHCount -= 1;
+        leftRawString = updateComponentCoefficient(leftRawString, "H\\+\\^", leftHCount, "H+^");
+
+        let currentH2O = getCoefficient(leftRawString, "H2_O");
+        if (currentH2O > 0) {
+          leftRawString = updateComponentCoefficient(leftRawString, "H2_O", currentH2O + 1, "H2_O");
+        } else {
+          leftRawString = cleanFormulaString(leftRawString + "+H2_O");
+        }
+      }
+
+      if (isRightHasH) {
+        let currentRightOH = getCoefficient(rightRawString, "OH-\\^");
+        rightRawString = updateComponentCoefficient(rightRawString, "OH-\\^", currentRightOH - 1, "OH-^");
+        rightHCount -= 1;
+        rightRawString = updateComponentCoefficient(rightRawString, "H\\+\\^", rightHCount, "H+^");
+
+        let currentH2O = getCoefficient(rightRawString, "H2_O");
+        if (currentH2O > 0) {
+          rightRawString = updateComponentCoefficient(rightRawString, "H2_O", currentH2O + 1, "H2_O");
+        } else {
+          rightRawString = cleanFormulaString(rightRawString + "+H2_O");
+        }
+      }
+
+      if (typeof updateDisplay === "function") updateDisplay();
+
+      // H2O の相殺が発生するかチェック
+      let leftH2OCount = getCoefficient(leftRawString, "H2_O");
+      let rightH2OCount = getCoefficient(rightRawString, "H2_O");
+
+      if (leftH2OCount > 0 && rightH2OCount > 0) {
+        // ポップアップ③（相殺がある場合）
+        ohConvertStep = 3;
+        showTutorialAlert("両辺にH₂OがあるのでH₂Oが消える。OKボタンを押せ。", step4_ShowH2OStrikeThrough);
+      } else {
+        // 相殺がない場合はここで終了、ボタンを復帰して次の「OH-押し」を待つ
+        ohConvertStep = 0;
+        btnConvertOH.disabled = false;
+        btnConvertOH.style.opacity = "1";
+        
+        // ナビゲーションのテキストを更新
+        updateNextInstruction();
+      }
+    }
+
+    // 【動作4】H2O に取り消し線を引く
+    function step4_ShowH2OStrikeThrough() {
+      applyDeleteLineToDisplay("left", "H₂O");
+      applyDeleteLineToDisplay("right", "H₂O");
+
+      // ポップアップ④
+      ohConvertStep = 4;
+      showTutorialAlert("OKボタンを押せ。", step5_CancelH2O);
+    }
+
+    // 【動作5】実際に H2O を相殺して終了
+    function step5_CancelH2O() {
+      let leftH2OCount = getCoefficient(leftRawString, "H2_O");
+      let rightH2OCount = getCoefficient(rightRawString, "H2_O");
+
+      leftH2OCount -= 1;
+      rightH2OCount -= 1;
+
+      leftRawString = updateComponentCoefficient(leftRawString, "H2_O", leftH2OCount, "H2_O");
+      rightRawString = updateComponentCoefficient(rightRawString, "H2_O", rightH2OCount, "H2_O");
+
+      if (typeof updateDisplay === "function") updateDisplay();
+
+      // 1サイクル終了。ボタンを復帰
+      ohConvertStep = 0;
+      btnConvertOH.disabled = false;
+      btnConvertOH.style.opacity = "1";
+
+      // ナビゲーションのテキストを更新
+      updateNextInstruction();
+    }
+
+    // 次の指示メッセージを判定して表示するヘルパー関数
+    function updateNextInstruction() {
+      let remainLeftH = getCoefficient(leftRawString, "H\\+\\^");
+      let remainRightH = getCoefficient(rightRawString, "H\\+\\^");
+      
+      if (remainLeftH > 0 || remainRightH > 0) {
+        if (typeof updateNavi === "function") {
+          updateNavi("まだH⁺がある。両辺にOH⁻を書き加えてH⁺を消す。【両辺にOH⁻】ボタンを押せ。");
+        }
+      } else {
+        if (typeof updateNavi === "function") {
+          updateNavi("H⁺を消す操作を完了しました！");
+        }
+      }
+    }
+
+
+
 
     // 💡 クイズの初期化関数
 function initQuiz() {
@@ -934,6 +1254,7 @@ function initQuiz() {
       clearCandidates();
       saveState();
       updateDisplay();
+checkOHButtonVisibility();
       updateNavi();
     // 💡【追加】新しい問題が表示されたタイミングで、その場所を自動セーブ！
       if (typeof saveGameProgress === "function") {
@@ -1517,29 +1838,38 @@ document.getElementById("btnGiveUp").addEventListener("click", () => {
     });
     // --- 提出と判定 ---
 // --- 提出と判定（詳細ログ付き） ---
+// --- 提出と判定（詳細ログ完全版） ---
     document.getElementById("btnSubmit").addEventListener("click", () => {
       if (!checkTutorial("提出")) return;
       const currentQuiz = quizList[currentQuizIndex];
 
       const splitCompounds = (rawStr) => {
         if (!rawStr) return [];
-        let cleanStr = rawStr.replace(/\s+/g, ''); 
+        let cleanStr = rawStr.replace(/\s+/g, '');
         let result = [];
         let currentCompound = "";
-        let chars = cleanStr.split(""); 
-        
+        let chars = cleanStr.split("");
         let isSuperPlus = new Array(chars.length).fill(false);
         for(let i = 0; i < chars.length; i++) {
-          if (chars[i] === '^' && i > 0) { if (chars[i-1] === '+') { isSuperPlus[i-1] = true; } }
+          if (chars[i] === '^' && i > 0) {
+            if (chars[i-1] === '+') {
+              isSuperPlus[i-1] = true;
+            }
+          }
         }
-        
         for (let i = 0; i < chars.length; i++) {
           if (chars[i] === "+" && !isSuperPlus[i]) {
-            if (currentCompound !== "") { result.push(currentCompound); }
+            if (currentCompound !== "") {
+              result.push(currentCompound);
+            }
             currentCompound = "";
-          } else { currentCompound += chars[i]; }
+          } else {
+            currentCompound += chars[i];
+          }
         }
-        if (currentCompound !== "") { result.push(currentCompound); }
+        if (currentCompound !== "") {
+          result.push(currentCompound);
+        }
         return result;
       };
 
@@ -1568,49 +1898,46 @@ document.getElementById("btnGiveUp").addEventListener("click", () => {
         let userSorted = [...userArr].sort();
         let correctSorted = [...correctArr].sort();
         let isMatch = JSON.stringify(userSorted) === JSON.stringify(correctSorted);
-        
         if (!isMatch) {
           console.log("❌ 中身が一致しませんでした。");
           console.log("   ユーザー(ソート済):", JSON.stringify(userSorted));
           console.log("   正解データ(ソート済):", JSON.stringify(correctSorted));
+        } else {
+          console.log("✅ 一致しました！");
         }
         return isMatch;
       };
 
-      console.log("--- 左辺の照合結果 ---");
+      console.log("--- 左辺の照合検証 ---");
       const leftCorrect = isFormulaMatch(userLeftParts, currentQuiz.correctLeft);
-      
-      console.log("--- 右辺の照合結果 ---");
+
+      console.log("--- 右辺の照合検証 ---");
       const rightCorrect = isFormulaMatch(userRightParts, currentQuiz.correctRight);
 
-      console.log("========================================");
+      // 💡 [ログ] 最終的な正誤の組み合わせを出力
+      console.log(`📢 【最終判定結果】 左辺: ${leftCorrect ? "OK" : "NG"} / 右辺: ${rightCorrect ? "OK" : "NG"}`);
+      const isAllCorrect = leftCorrect && rightCorrect;
+      console.log("⚖️ 最終正誤フラグ (isAllCorrect) :", isAllCorrect);
+      console.log("=========================================");
 
-if (leftCorrect && rightCorrect) {
-        // 正解音の再生
-        seikaiAudio.currentTime = 0;
-        seikaiAudio.play().catch(err => console.log(err));
-
-        // 💡【追加】現在の問題のレベルに応じた点数を取得して加算
-        const lvNum = currentQuiz.level || 1; // レベルが取れなければ1点（安全ガード）
-        const pointsEarned = levelPoints[lvNum] || 10; // 配点設定から取得（なければ10点）
-        
-        totalScore += pointsEarned; // 総得点にプラス
-        
-        // 💡【追加】画面のスコア数値をアニメーション等も含めて更新
-        document.getElementById("currentScore").innerText = totalScore;
-
-        currentSide = ""; 
-        updateDisplay();
-        nextBtnAreaEl.style.display = "flex"; 
-        
-        // 💡 ナビゲーションメッセージに獲得点数も表示してあげると喜びが増します！
-        naviTextEl.innerHTML = `🎉 大正解！ <span style="color: #10b981; font-weight: bold;">+${pointsEarned}点</span> を獲得しました！`;
+      // --- 以下、既存の正解・不正解時の画面処理ロジック ---
+      if (isAllCorrect) {
+        // 正解時の処理（音を鳴らす、次へボタンを出すなど既存のコードをここに記述）
+        if (typeof seikaiAudio !== "undefined") {
+          seikaiAudio.currentTime = 0;
+          seikaiAudio.play().catch(e=>{});
+        }
+        // 以下、あなたのコードに合わせてナビ更新やスコア加算の処理を続けてください
+        if (typeof updateNavi === "function") updateNavi("✨ 正解です！素晴らしい！");
+        const nextBtnAreaEl = document.getElementById("nextBtnArea");
+        if (nextBtnAreaEl) nextBtnAreaEl.style.display = "flex";
       } else {
-        // 不正解音の再生
-        hazureAudio.currentTime = 0;
-        hazureAudio.play().catch(err => console.log(err));
-
-        naviTextEl.innerHTML = "<span style='color: #ef4444; font-weight: bold;'>❌ 不正解です。係数や価数が合っているか確認しよう！</span>";
+        // 不正解時の処理
+        if (typeof hazureAudio !== "undefined") {
+          hazureAudio.currentTime = 0;
+          hazureAudio.play().catch(e=>{});
+        }
+        if (typeof updateNavi === "function") updateNavi("❌ 不正解です。もう一度見直してみましょう。");
       }
     });
 
